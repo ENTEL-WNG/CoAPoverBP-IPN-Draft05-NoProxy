@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-WORK="$HOME/coapbp/experiments/draft05-ipn/workcopy/ud3tn"
-PY="$HOME/coapbp/experiments/draft05-ipn/.venv-coap310/bin/python"
-SERVER="$HOME/coapbp/experiments/draft05-ipn/NodeB_Mission_Draft05_IPN.py"
-export PYTHONPATH="$WORK/python-ud3tn-utils:$WORK/pyd3tn"
-exec "$PY" -u "$SERVER"
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
+require_file "$EARTH_PY"
+require_file "$REPO_ROOT/applications/earth/NodeB_Mission_Draft05_IPN.py"
+exec "$EARTH_PY" -u "$REPO_ROOT/applications/earth/NodeB_Mission_Draft05_IPN.py"

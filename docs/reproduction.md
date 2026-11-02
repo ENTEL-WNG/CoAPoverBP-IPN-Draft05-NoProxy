@@ -1,13 +1,22 @@
-# Reproduction guide — known commands
+# Reproduction quick start
 
-These scripts are example commands from the working three-VM lab. Start the actual modified µD3TN daemon on each VM **using the original verified command and the correct node EID and port**, then start the Earth server and Rover GUI using the included scripts. AAP2 configuration is issued from separate terminals and must be refreshed after its one-hour contact expires.
+This is the **known working three-VM lab recipe**, not a certified clean-machine installer. Read [installation.md](installation.md) first to obtain a patched µD3TN build and compatible Python environments; then follow [ietf-demo.md](ietf-demo.md) for the detailed experiment and Wireshark walkthrough.
 
-1. On Satellite, run `scripts/satellite_contacts.sh`.
-2. On Earth, run `scripts/earth_contacts.sh`; start `scripts/earth_server.sh`.
-3. On Rover, run `scripts/rover_contacts.sh`; start `scripts/rover_gui.sh`.
-4. On Earth, capture **enp0s8**, TCP port **4673**; Decode As TCPCLv3 if necessary and apply display filter `bpv7`.
-5. Press Rover Safety GET **twice within 10 s** for a 116-byte Aggregate; press Science POST **twice within 10 s** for a 556-byte Aggregate.
-6. Save `.pcapng` and record both Earth and Rover console logs from the *same run*, exact MIDs, Tokens, BP lifetime and time stamps.
-7. Install `wireshark/coapbp05_ipn64_PL65000.lua` into Earth's `~/.local/lib/wireshark/plugins/`, restart Wireshark, and use filter `coapbp05.count == 2`. The decoder covers destination IPN services **10, 11, 64**.
+**All commands below run on the VM indicated, and in the repository directory.** Keep the daemon in its own running terminal. Do not start duplicate daemons on occupied ports or sockets.
 
-Scripts do not install dependencies or start µD3TN; they depend on the tested VM environments in `~/coapbp`. For a portable release, document installation, dependencies, daemon startup, build steps and full end-to-end validation.
+```text
+SATELLITE: ./scripts/start_ud3tn.sh satellite
+EARTH:     ./scripts/start_ud3tn.sh earth
+ROVER:     ./scripts/start_ud3tn.sh rover
+
+SATELLITE: ./scripts/satellite_contacts.sh
+EARTH:     ./scripts/earth_contacts.sh
+ROVER:     ./scripts/rover_contacts.sh
+
+EARTH:     ./scripts/earth_server.sh
+ROVER:     ./scripts/rover_gui.sh
+```
+
+On Earth, capture on **enp0s8**, TCP port **4673**, decode TCPCLv3 → BPv7, and display filter `bpv7`. For the Lua parser of two-member Aggregates: `coapbp05.count == 2`. Click the **Safety GET** button twice within **10 s** for an expected **116-byte** aggregate or **Science POST** twice for an expected **556-byte** aggregate. These are specific to the supplied experimental payloads and code. Look for independently matched response Tokens.
+
+The scripts support overrides `UD3TN_ROOT`, `CONFIG_PY`, `ROVER_PY`, and `EARTH_PY`. They are **not** a complete environment installer. The GUI's rover photo remains an external asset and state files are stored outside the repository; see installation notes.

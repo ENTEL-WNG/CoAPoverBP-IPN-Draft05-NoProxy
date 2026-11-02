@@ -1,12 +1,16 @@
-# Wireshark Lua dissector
+# Wireshark Lua dissector for experimental CoAP-over-BPv7
 
-`coapbp05_ipn64_PL65000.lua` parses this experiment's modified 5-byte CoAP header with 24-bit MID and experimental Payload-length option **65000** inside BPv7 payloads addressed to IPN services 64 (Earth CoAP), 10 (Rover Safety) and 11 (Rover Science).
+The Lua plugin `coapbp05_ipn64_PL65000.lua` dissects the **experiment-specific** five-byte CoAP header / **24-bit MID**, experimental Payload-length option **65000**, and Aggregate members embedded as the BPv7 application payload. It registers for **IPN destination service 64** (Earth requests), **10** (Rover Safety responses), and **11** (Rover Science responses).
 
-On the **Earth VM**:
+On **Earth**:
 
 ```bash
-mkdir -p ~/.local/lib/wireshark/plugins
-cp coapbp05_ipn64_PL65000.lua ~/.local/lib/wireshark/plugins/
+mkdir -p "$HOME/.local/lib/wireshark/plugins"
+cp wireshark/coapbp05_ipn64_PL65000.lua "$HOME/.local/lib/wireshark/plugins/"
 ```
 
-Restart Wireshark, open an actual experimental capture, ensure BPv7/TCPCL is decoded, and filter `coapbp05.count == 2`. For responses use `bpv7` and inspect the CoAP member Token. This Lua decoder reflects an experimental wire format, not standard UDP CoAP dissection. The packaged extension to services 10/11 should be revalidated when installing on another system.
+Close/restart Wireshark and open the `.pcapng`. Capture interface: **enp0s8**. For TCPCLv3 on Earth, Decode As TCP port **4673 → TCPCL** if needed. Display `bpv7` for all bundles; display **`coapbp05.count == 2`** for two-member Aggregates. Expand `CoAP member #1` and `CoAP member #2` to inspect Type, CoAP Code, 24-bit MID, Token, options, Payload-length and CoAP payload.
+
+In the saved Science capture the Aggregate is frame **14** (556-byte BP payload); responses are frames **31** and **49** (54 bytes each) with matching Tokens. **Responses are not aggregated** in the tested path, so they will not match the `count == 2` filter.
+
+This decoder is a research extension, not the standard Wireshark CoAP-over-UDP dissector. The internal label may still say “IPN service 64” when decoding return bundles for service 10/11; inspect the **actual BPv7 destination EID** instead of trusting that static label. The complete decoder should be tested again if the wire format or Payload-length option number changes.
