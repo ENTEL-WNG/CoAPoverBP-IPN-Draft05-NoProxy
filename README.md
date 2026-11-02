@@ -74,3 +74,12 @@ Science Aggregate frame 14 contains request 24-bit MIDs **4858056** and **485805
 - Modified aiocoap is redistributed with its `MIT` and `BSD-3-Clause` license texts. Do not infer a license for the *entire project* from those vendored licenses; confirm the project license with the ENTEL-WNG maintainers.
 - The testbed previously warned that its AAP2 interface had **no configured BDM secret**. Treat it as an **isolated, trusted lab only**. Do not expose these defaults on public networks.
 - Packet captures contain testbed IPs and application data. Do not commit credentials, tokens used for authentication, VM images, local runtime state or private logs. CoAP correlation Tokens shown in traces are **not GitHub authentication tokens**.
+
+## AUTHORS
+**Anna Calveras** ([anna.calveras@upc.edu](mailto:anna.calveras@upc.edu)) — Project supervisor
+
+## Acknowledgements
+We would like to thank **Carles Gómez** for his valuable guidance, technical discussions, and feedback on this research work.
+
+## Funding
+This work is partially supported by Spanish MCIN/AEI/10.13039/501100011033/FEDER/UE through project **PID2023-146378NB-I00**.
