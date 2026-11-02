@@ -1,0 +1,561 @@
+diff --git a/ud3tn/components/bundle7/bundle7.c b/ud3tn/components/bundle7/bundle7.c
+index 64e217f..4b7bbb7 100644
+--- a/ud3tn/components/bundle7/bundle7.c
++++ b/ud3tn/components/bundle7/bundle7.c
+@@ -65,16 +65,19 @@ size_t bundle7_eid_sizeof(const char *eid)
+ 			+ length;
+ 	// ipn:
+ 	} else {
+-		uint64_t node, service;
++		uint64_t allocator, node, service;
+ 
+-		if (validate_ipn_eid(eid, &node, &service) != UD3TN_OK)
++		if (validate_ipn_eid_3(eid, &allocator, &node, &service) != UD3TN_OK)
+ 			// Error
+ 			return 0;
+-		return 1 // CBOR array header
+-			+ bundle7_cbor_uint_sizeof(BUNDLE_V7_EID_SCHEMA_IPN)
+-			+ 1 // CBOR array header
+-			+ bundle7_cbor_uint_sizeof(node)
+-			+ bundle7_cbor_uint_sizeof(service);
++                return 1 // Outer CBOR array
++                        + bundle7_cbor_uint_sizeof(BUNDLE_V7_EID_SCHEMA_IPN)
++                        + 1 // Inner CBOR array
++                        + (allocator == 0
++                            ? 0
++                            : bundle7_cbor_uint_sizeof(allocator))
++                        + bundle7_cbor_uint_sizeof(node)
++                        + bundle7_cbor_uint_sizeof(service);
+ 	}
+ }
+ 
+diff --git a/ud3tn/components/bundle7/eid.c b/ud3tn/components/bundle7/eid.c
+index fa7ed9c..6bf5377 100644
+--- a/ud3tn/components/bundle7/eid.c
++++ b/ud3tn/components/bundle7/eid.c
+@@ -171,79 +171,86 @@ CborError eid_parse_dtn(CborValue *it, char **eid)
+ }
+ 
+ 
++
+ CborError eid_parse_ipn(CborValue *it, char **eid)
+ {
+-	CborValue recursed;
+-	CborError err;
+-	uint64_t nodenum, servicenum;
+-
+-	// Enter array
+-	if (!cbor_value_is_array(it) || !cbor_value_is_length_known(it))
+-		return CborErrorIllegalType;
+-
+-	err = cbor_value_enter_container(it, &recursed);
+-	if (err)
+-		return err;
+-
+-	// Node number
+-	// -----------
+-	if (!cbor_value_is_unsigned_integer(&recursed))
+-		return CborErrorIllegalType;
+-
+-	cbor_value_get_uint64(&recursed, &nodenum);
+-
+-	// Advance to service number
+-	err = cbor_value_advance_fixed(&recursed);
+-	if (err)
+-		return err;
+-
+-	// Service number
+-	// --------------
+-	if (!cbor_value_is_unsigned_integer(&recursed))
+-		return CborErrorIllegalType;
+-
+-	cbor_value_get_uint64(&recursed, &servicenum);
+-
+-	err = cbor_value_advance_fixed(&recursed);
+-	if (err)
+-		return err;
+-
+-	// Expect end of array
+-	if (!cbor_value_at_end(&recursed))
+-		return CborErrorIllegalType;
+-
+-
+-	// Leave array
+-	err = cbor_value_leave_container(it, &recursed);
+-	if (err)
+-		return err;
+-
+-	// "ipn:" + nodenum + "." + servicenum + "\0"
+-	size_t length = 4
+-			+ decimal_digits(nodenum)
+-			+ 1
+-			+ decimal_digits(servicenum)
+-			+ 1;
+-	// "ipn:18446744073709551615.18446744073709551615\0"
+-	ASSERT(length <= 20 + 20 + 6);
+-
+-	// Allocate string memory
+-	*eid = malloc(length);
+-	if (*eid == NULL)
+-		return CborErrorOutOfMemory;
+-
+-	// We use snprintf() because sprintf() would use a different
+-	// malloc() memory allocator then the bundle7 library.
+-	ASSERT(
+-		snprintf(*eid, length, "ipn:%" PRIu64 ".%" PRIu64,
+-			 nodenum, servicenum) + 1 == (ssize_t)length
+-	);
+-
+-	return CborNoError;
++    CborValue recursed;
++    CborError err;
++    size_t count;
++    uint64_t values[3] = {0, 0, 0};
++    uint64_t allocator, node, service;
++
++    // Validate the CBOR array.
++    if (!cbor_value_is_array(it) ||
++        !cbor_value_is_length_known(it))
++        return CborErrorIllegalType;
++
++    err = cbor_value_get_array_length(it, &count);
++    if (err)
++        return err;
++
++    if (count != 2 && count != 3)
++        return CborErrorIllegalType;
++
++    err = cbor_value_enter_container(it, &recursed);
++    if (err)
++        return err;
++
++    // Extract every encoded integer.
++    for (size_t i = 0; i < count; i++) {
++        if (!cbor_value_is_unsigned_integer(&recursed))
++            return CborErrorIllegalType;
++
++        err = cbor_value_get_uint64(&recursed, &values[i]);
++        if (err)
++            return err;
++
++        err = cbor_value_advance_fixed(&recursed);
++        if (err)
++            return err;
++    }
++
++    if (!cbor_value_at_end(&recursed))
++        return CborErrorIllegalType;
++
++    // Decode the two supported representations.
++    if (count == 2) {
++        allocator = values[0] >> 32;
++        node = values[0] & UINT32_MAX;
++        service = values[1];
++    } else {
++        allocator = values[0];
++        node = values[1];
++        service = values[2];
++
++        if (allocator > UINT32_MAX || node > UINT32_MAX)
++            return CborErrorIllegalType;
++    }
++
++    err = cbor_value_leave_container(it, &recursed);
++    if (err)
++        return err;
++
++    // Convert the decoded integers back to text.
++    int needed = snprintf(NULL, 0,
++        "ipn:%" PRIu64 ".%" PRIu64 ".%" PRIu64,
++        allocator, node, service);
++
++    if (needed < 0 || needed > EID_MAX_LEN)
++        return CborErrorIllegalType;
++
++    char *result = malloc((size_t)needed + 1);
++    if (result == NULL)
++        return CborErrorOutOfMemory;
++
++    snprintf(result, (size_t)needed + 1,
++        "ipn:%" PRIu64 ".%" PRIu64 ".%" PRIu64,
++        allocator, node, service);
++
++    *eid = result;
++    return CborNoError;
+ }
+ 
+-
+-
+ char *bundle7_eid_parse(const uint8_t *buffer, size_t length)
+ {
+ 	char *eid = NULL;
+@@ -305,34 +312,45 @@ CborError serialize_dtn(const char *eid, CborEncoder *encoder)
+ }
+ 
+ 
++
+ CborError serialize_ipn(const char *eid, CborEncoder *encoder)
+ {
+ 	CborEncoder inner, ssp;
+-	uint64_t nodenum, servicenum;
++	uint64_t allocator, node, service;
+ 
+-	// Parse node and service numbers
+-	if (validate_ipn_eid(eid, &nodenum, &servicenum) != UD3TN_OK)
++	if (validate_ipn_eid_3(eid, &allocator, &node, &service) != UD3TN_OK)
+ 		return CborErrorIllegalType;
+ 
+-	// EID container
+-	cbor_encoder_create_array(encoder, &inner, 2);
++	// The allocator and the node each occupy at most 32 bits.
++	if (allocator > UINT32_MAX || node > UINT32_MAX)
++		return CborErrorIllegalType;
+ 
+-	// Schema
++	// The default allocator's node zero denotes only the null endpoint.
++	if (allocator == 0 && node == 0 && service != 0)
++		return CborErrorIllegalType;
++
++	// Outer EID array: [scheme, scheme-specific part].
++	cbor_encoder_create_array(encoder, &inner, 2);
+ 	cbor_encode_uint(&inner, BUNDLE_V7_EID_SCHEMA_IPN);
+ 
+-	// SSP
+-	cbor_encoder_create_array(&inner, &ssp, 2);
+-	cbor_encode_uint(&ssp, nodenum);
+-	cbor_encode_uint(&ssp, servicenum);
+-	cbor_encoder_close_container(&inner, &ssp);
++	if (allocator == 0) {
++		// The two-element form saves one byte for the default allocator.
++		cbor_encoder_create_array(&inner, &ssp, 2);
++		cbor_encode_uint(&ssp, node);
++		cbor_encode_uint(&ssp, service);
++	} else {
++		// Use explicit allocator, node, and service components.
++		cbor_encoder_create_array(&inner, &ssp, 3);
++		cbor_encode_uint(&ssp, allocator);
++		cbor_encode_uint(&ssp, node);
++		cbor_encode_uint(&ssp, service);
++	}
+ 
+-	// EID container
++	cbor_encoder_close_container(&inner, &ssp);
+ 	cbor_encoder_close_container(encoder, &inner);
+-
+ 	return CborNoError;
+ }
+ 
+-
+ size_t bundle7_eid_get_max_serialized_size(const char *eid)
+ {
+ 	// dtn:none
+diff --git a/ud3tn/components/ud3tn/bundle_processor.c b/ud3tn/components/ud3tn/bundle_processor.c
+index 2abb193..1036168 100644
+--- a/ud3tn/components/ud3tn/bundle_processor.c
++++ b/ud3tn/components/ud3tn/bundle_processor.c
+@@ -260,7 +260,7 @@ void bundle_processor_task(void * const param)
+ 		if (ctx.local_eid_prefix == NULL)
+ 			abort();
+ 
+-		char *const dot = strchr(ctx.local_eid_prefix, '.');
++		char *const dot = strrchr(ctx.local_eid_prefix, '.');
+ 
+ 		if (!dot) {
+ 			LOGF_ERROR(
+diff --git a/ud3tn/components/ud3tn/eid.c b/ud3tn/components/ud3tn/eid.c
+index f47625f..33aa24a 100644
+--- a/ud3tn/components/ud3tn/eid.c
++++ b/ud3tn/components/ud3tn/eid.c
+@@ -215,30 +215,66 @@ const char *parse_ipn_ull(const char *const cur, uint64_t *const out)
+ 
+ // https://datatracker.ietf.org/doc/html/rfc6260
+ // check "ipn:node.service" EID
+-enum ud3tn_result validate_ipn_eid(
+-	const char *const eid,
+-	uint64_t *const node_out, uint64_t *const service_out)
+-{
+-	if (get_eid_scheme(eid) != EID_SCHEME_IPN)
+-		return UD3TN_FAIL;
+-
+-	const char *cur;
+-	uint64_t tmp_node, tmp_service;
+-
+-	cur = parse_ipn_ull(&eid[4], &tmp_node);
+-	if (!cur || *cur != '.')
+-		return UD3TN_FAIL;
+ 
+-	cur = parse_ipn_ull(cur + 1, &tmp_service);
+-	if (!cur || *cur != '\0')
+-		return UD3TN_FAIL;
+-
+-	if (node_out)
+-		*node_out = tmp_node;
+-	if (service_out)
+-		*service_out = tmp_service;
++// RFC 9758: accept allocator.node.service.
++// Also accept legacy node.service (allocator defaults to zero).
++enum ud3tn_result validate_ipn_eid_3(
++    const char *const eid,
++    uint64_t *const allocator_out,
++    uint64_t *const node_out,
++    uint64_t *const service_out)
++{
++    if (get_eid_scheme(eid) != EID_SCHEME_IPN)
++        return UD3TN_FAIL;
++
++    uint64_t first, second, third;
++    uint64_t allocator, node, service;
++    const char *cur;
++
++    cur = parse_ipn_ull(&eid[4], &first);
++    if (!cur || *cur != '.')
++        return UD3TN_FAIL;
++
++    cur = parse_ipn_ull(cur + 1, &second);
++    if (!cur)
++        return UD3TN_FAIL;
++
++    if (*cur == '\0') {
++        // Legacy form: ipn:node.service
++        allocator = 0;
++        node = first;
++        service = second;
++    } else if (*cur == '.') {
++        // RFC 9758 form: ipn:allocator.node.service
++        cur = parse_ipn_ull(cur + 1, &third);
++        if (!cur || *cur != '\0')
++            return UD3TN_FAIL;
++        allocator = first;
++        node = second;
++        service = third;
++    } else {
++        return UD3TN_FAIL;
++    }
++
++    if (allocator_out)
++        *allocator_out = allocator;
++    if (node_out)
++        *node_out = node;
++    if (service_out)
++        *service_out = service;
++
++    return UD3TN_OK;
++}
+ 
+-	return UD3TN_OK;
++// Compatibility wrapper for existing two-output callers.
++// Callers requiring the allocator must use validate_ipn_eid_3.
++enum ud3tn_result validate_ipn_eid(
++    const char *const eid,
++    uint64_t *const node_out,
++    uint64_t *const service_out)
++{
++    return validate_ipn_eid_3(
++        eid, NULL, node_out, service_out);
+ }
+ 
+ char *get_node_id(const char *const eid)
+@@ -284,7 +320,8 @@ char *get_node_id(const char *const eid)
+ 		result = strdup(eid);
+ 		if (result == NULL)
+ 			return NULL;
+-		delim = strchr(result, '.');
++		delim = strrchr(result, '.');
++                // strrchr() searches for the last occurrence.
+ 		ASSERT(delim);
+ 		// No out-of-bounds access as validate_eid ensures the dot is
+ 		// always followed by at least one digit.
+@@ -311,7 +348,7 @@ const char *get_agent_id_ptr(const char *const eid)
+ 			return NULL;
+ 		return &delim[1];
+ 	case EID_SCHEME_IPN:
+-		delim = strchr(eid, '.');
++		delim = strrchr(eid, '.');
+ 		if (!delim || delim[1] == '\0')
+ 			return NULL;
+ 		return &delim[1];
+diff --git a/ud3tn/include/ud3tn/eid.h b/ud3tn/include/ud3tn/eid.h
+index dc7df78..a8adf70 100644
+--- a/ud3tn/include/ud3tn/eid.h
++++ b/ud3tn/include/ud3tn/eid.h
+@@ -83,6 +83,12 @@ const char *parse_ipn_ull(const char *const cur, uint64_t *const out);
+  *
+  * @return UD3TN_OK if the EID string is a valid ipn EID.
+  */
++enum ud3tn_result validate_ipn_eid_3(
++    const char *const eid,
++    uint64_t *const allocator_out,
++    uint64_t *const node_out,
++    uint64_t *const service_out);
++
+ enum ud3tn_result validate_ipn_eid(
+ 	const char *const eid,
+ 	uint64_t *const node_out, uint64_t *const service_out);
+diff --git a/ud3tn/python-ud3tn-utils/ud3tn_utils/aap2/aap2_client.py b/ud3tn/python-ud3tn-utils/ud3tn_utils/aap2/aap2_client.py
+index cfd2a85..6d7db10 100644
+--- a/ud3tn/python-ud3tn-utils/ud3tn_utils/aap2/aap2_client.py
++++ b/ud3tn/python-ud3tn-utils/ud3tn_utils/aap2/aap2_client.py
+@@ -89,7 +89,7 @@ class AAP2Client(abc.ABC):
+     def eid_prefix(self):
+         """Return the EID prefix."""
+         if self.node_eid[0:3] == "ipn":
+-            prefix, _ = self.node_eid.split(".")
++            prefix, _ = self.node_eid.rsplit(".", 1)
+             return prefix
+         else:
+             return self.node_eid
+diff --git a/ud3tn/python-ud3tn-utils/ud3tn_utils/aap2/bin/helpers.py b/ud3tn/python-ud3tn-utils/ud3tn_utils/aap2/bin/helpers.py
+index 997393f..c6d8f1a 100644
+--- a/ud3tn/python-ud3tn-utils/ud3tn_utils/aap2/bin/helpers.py
++++ b/ud3tn/python-ud3tn-utils/ud3tn_utils/aap2/bin/helpers.py
+@@ -109,12 +109,20 @@ def add_verbosity_parser_argument(parser):
+ 
+ 
+ def get_node_eid_prefix(eid):
+-    if eid[0:6] == "dtn://":
++
++    if eid.startswith("dtn://"):
+         return "dtn://" + eid.split("/")[2] + "/"
+-    elif eid[0:4] == "ipn:":
+-        return eid.split(".")[0] + "."
+-    else:
+-        raise ValueError("Cannot determine the node prefix for the given EID.")
++
++    if eid.startswith("ipn:"):
++        parts = eid.split(".")
++
++        if len(parts) not in (2, 3):
++            raise ValueError("Invalid IPN EID")
++
++        return ".".join(parts[:-1]) + "."
++
++    raise ValueError("Unsupported EID")
++
+ 
+ 
+ def get_config_eid(eid):
+diff --git a/ud3tn/test/unit/test_bundle7Parser.c b/ud3tn/test/unit/test_bundle7Parser.c
+index 7b0c9a9..8bf63e8 100644
+--- a/ud3tn/test/unit/test_bundle7Parser.c
++++ b/ud3tn/test/unit/test_bundle7Parser.c
+@@ -69,20 +69,20 @@ TEST(bundle7Parser, eid_parser)
+ 
+ 	eid = bundle7_eid_parse(ipn, sizeof(ipn));
+ 	TEST_ASSERT_NOT_NULL(eid);
+-	TEST_ASSERT_EQUAL_STRING("ipn:42.72", eid);
++	TEST_ASSERT_EQUAL_STRING("ipn:0.42.72", eid);
+ 
+ 	eid = bundle7_eid_parse(ipn2, sizeof(ipn2));
+ 	TEST_ASSERT_NOT_NULL(eid);
+-	TEST_ASSERT_EQUAL_STRING("ipn:42.0", eid);
++	TEST_ASSERT_EQUAL_STRING("ipn:0.42.0", eid);
+ 
+ 	eid = bundle7_eid_parse(ipn3, sizeof(ipn3));
+ 	TEST_ASSERT_NOT_NULL(eid);
+-	TEST_ASSERT_EQUAL_STRING("ipn:0.0", eid);
++	TEST_ASSERT_EQUAL_STRING("ipn:0.0.0", eid);
+ 
+ 	eid = bundle7_eid_parse(ipn4, sizeof(ipn4));
+ 	TEST_ASSERT_NOT_NULL(eid);
+ 	TEST_ASSERT_EQUAL_STRING(
+-		"ipn:18446744073709551615.18446744073709551615",
++		"ipn:4294967295.4294967295.18446744073709551615",
+ 		eid
+ 	);
+ 
+diff --git a/ud3tn/test/unit/test_bundle7Serializer.c b/ud3tn/test/unit/test_bundle7Serializer.c
+index 9b96fd0..ab5d1cc 100644
+--- a/ud3tn/test/unit/test_bundle7Serializer.c
++++ b/ud3tn/test/unit/test_bundle7Serializer.c
+@@ -485,12 +485,15 @@ static const uint8_t dtn_ipn[] = { 0x82, 0x02, 0x82, 0x0c, 0x18, 0x7b };
+ static const char *const dtn_ipn_eid = "ipn:12.123";
+ // max. value for ipn: EID
+ static const uint8_t dtn_ipn2[] = {
+-	0x82, 0x02, 0x82,
+-	0x1B, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+-	0x1B, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
++    0x82, 0x02, 0x83,
++    0x1a, 0xff, 0xff, 0xff, 0xff,
++    0x1a, 0xff, 0xff, 0xff, 0xff,
++    0x1b, 0xff, 0xff, 0xff, 0xff,
++    0xff, 0xff, 0xff, 0xff
+ };
++
+ static const char *const dtn_ipn2_eid =
+-	"ipn:18446744073709551615.18446744073709551615";
++    "ipn:4294967295.4294967295.18446744073709551615";
+ static const char *const dtn_ipn_overflow1_eid =
+ 	"ipn:18446744073709551616.18446744073709551615";
+ static const char *const dtn_ipn_overflow2_eid =
+@@ -575,15 +578,71 @@ TEST(bundle7Serializer, bundle_age)
+ }
+ 
+ 
++TEST(bundle7Serializer, ipn3_roundtrip)
++{
++    const char *original_eid = "ipn:1.3.64";
++
++    const uint8_t expected_cbor[] = {
++        0x82, 0x02, 0x83, 0x01, 0x03, 0x18, 0x40
++    };
++
++    size_t length = 0;
++
++    // 1. Encode the textual IPN address into CBOR.
++    uint8_t *encoded = bundle7_eid_serialize_alloc(
++        original_eid, &length);
++
++    TEST_ASSERT_NOT_NULL(encoded);
++
++    // 2. Check that the CBOR bytes are exactly correct.
++    TEST_ASSERT_EQUAL(sizeof(expected_cbor), length);
++    TEST_ASSERT_EQUAL_UINT8_ARRAY(
++        expected_cbor, encoded, sizeof(expected_cbor));
++
++    // 3. Decode those bytes back into text.
++    char *decoded = bundle7_eid_parse(encoded, length);
++
++    TEST_ASSERT_NOT_NULL(decoded);
++
++    // 4. Check that the address survived the round trip.
++    TEST_ASSERT_EQUAL_STRING(original_eid, decoded);
++
++    free(decoded);
++    free(encoded);
++}
++
++
++TEST(bundle7Serializer, ipn3_two_element_decode)
++{
++    // The packed FQNN is (1 << 32) + 3 = 4294967299.
++    const uint8_t packed_cbor[] = {
++        0x82, 0x02, 0x82,
++        0x1B, 0x00, 0x00, 0x00, 0x01,
++        0x00, 0x00, 0x00, 0x03,
++        0x18, 0x40
++    };
++
++    char *decoded = bundle7_eid_parse(
++        packed_cbor, sizeof(packed_cbor));
++
++    TEST_ASSERT_NOT_NULL(decoded);
++    TEST_ASSERT_EQUAL_STRING("ipn:1.3.64", decoded);
++
++    free(decoded);
++}
++
++
+ TEST_GROUP_RUNNER(bundle7Serializer)
+ {
+ 	RUN_TEST_CASE(bundle7Serializer, dtn_text);
+ 	RUN_TEST_CASE(bundle7Serializer, dtn_none);
+ 	RUN_TEST_CASE(bundle7Serializer, dtn_ipn);
++        RUN_TEST_CASE(bundle7Serializer, ipn3_roundtrip);
+ 	RUN_TEST_CASE(bundle7Serializer, hop_count);
+ 	RUN_TEST_CASE(bundle7Serializer, bundle_age);
+ 	RUN_TEST_CASE(bundle7Serializer, simple_bundle);
+ 	RUN_TEST_CASE(bundle7Serializer, write_fail);
+ 	RUN_TEST_CASE(bundle7Serializer, crc16_generation);
+ 	RUN_TEST_CASE(bundle7Serializer, crc32_generation);
++        RUN_TEST_CASE(bundle7Serializer, ipn3_two_element_decode);
+ }

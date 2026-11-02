@@ -1,0 +1,55 @@
+# Python and virtual environments
+__pycache__/
+*.py[cod]
+.venv/
+.venv-*/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# Experiment state / runtime and local secrets
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*secret*
+state/
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.sock
+*.socket
+*.pid
+
+# VM / archives / generated builds / editor
+*.vdi
+*.vmdk
+*.ova
+*.ovf
+*.qcow2
+*.iso
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+build/
+dist/
+*.o
+*.so
+*.a
+*.swp
+*~
+.DS_Store
+.vscode/
+.idea/
+
+# Logs can contain runtime metadata; add only curated/sanitized evidence
+*.log
+
+# NOTE: .pcapng is intentionally NOT ignored: include selected validated captures.
+
+# Temporary source backups
+*.before-repo-paths

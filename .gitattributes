@@ -1,0 +1,5 @@
+# Preserve the verified upstream patch without whitespace changes.
+patches/ud3tn/*.patch -whitespace
+
+# Preserve vendored aiocoap source and licensing text verbatim.
+vendor/aiocoap/** -whitespace
