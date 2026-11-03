@@ -76,6 +76,7 @@ Science Aggregate frame 14 contains request 24-bit MIDs **4858056** and **485805
 - Packet captures contain testbed IPs and application data. Do not commit credentials, tokens used for authentication, VM images, local runtime state or private logs. CoAP correlation Tokens shown in traces are **not GitHub authentication tokens**.
 
 ## AUTHORS
+**Mahitab Salah Elattar** — Lead developer of the IPN Draft-05 implementation
 **Anna Calveras** ([anna.calveras@upc.edu](mailto:anna.calveras@upc.edu)) — Project supervisor
 
 ## Acknowledgements
