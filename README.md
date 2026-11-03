@@ -77,6 +77,7 @@ Science Aggregate frame 14 contains request 24-bit MIDs **4858056** and **485805
 
 ## AUTHORS
 **Mahitab Salah Elattar** — Lead developer of the IPN Draft-05 implementation
+
 **Anna Calveras** ([anna.calveras@upc.edu](mailto:anna.calveras@upc.edu)) — Project supervisor
 
 ## Acknowledgements
