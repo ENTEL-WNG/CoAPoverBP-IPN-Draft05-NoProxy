@@ -1,0 +1,167 @@
+1
+00:00:01,500 --> 00:00:09,575
+IETF 127 Hackathon: CoAP over Bundle Protocol version 7, the Aggregate demonstration.
+
+2
+00:00:11,025 --> 00:00:17,480
+In this demo, two CoAP POST messages travel inside one BPv7 request bundle.
+
+3
+00:00:17,530 --> 00:00:23,404
+The Rover Science client combines the two Non-confirmable POSTs at the application layer.
+
+4
+00:00:23,454 --> 00:00:28,766
+The Satellite only forwards bundles, and Earth hosts the CoAP application server.
+
+5
+00:00:28,816 --> 00:00:35,724
+This is an edited walkthrough of real Rover and Earth screenshots from our test on 7 November.
+
+6
+00:00:37,124 --> 00:00:40,360
+Here is Mission Control, set up for the experiment.
+
+7
+00:00:40,410 --> 00:00:44,649
+We select Aggregate mode, and use the Science POST application.
+
+8
+00:00:44,699 --> 00:00:51,057
+For this controlled lab test, the GUI and the Rover engine both use NSTART = 2.
+
+9
+00:00:52,457 --> 00:00:56,993
+Next, press Send POST for Rover Science twice, within ten seconds.
+
+10
+00:00:57,043 --> 00:01:03,915
+The first click fills buffer slot one, and the second click fills slot two, each with its own message ID.
+
+11
+00:01:03,965 --> 00:01:08,405
+Both requests now wait together in one Rover application buffer.
+
+12
+00:01:09,805 --> 00:01:12,335
+Mission Control confirms the result.
+
+13
+00:01:12,385 --> 00:01:20,826
+The Rover event log reports one Aggregate submission: two CoAP Singles, in a 556-byte bundle payload.
+
+14
+00:01:20,876 --> 00:01:27,711
+Earth sends back two 2.01 Created replies, and each one is matched independently by its Token.
+
+15
+00:01:29,111 --> 00:01:32,339
+Now, the real Wireshark capture taken on Earth.
+
+16
+00:01:32,389 --> 00:01:39,514
+Frame 36 is the request bundle, from ipn:1.11 to ipn:3.64.
+
+17
+00:01:39,564 --> 00:01:48,911
+It carries a 556-byte BPv7 payload, which our dissector classifies as a CoAP Aggregate with two messages.
+
+18
+00:01:50,311 --> 00:01:55,802
+Expanding frame 36, the custom Lua dissector shows the Aggregate structure.
+
+19
+00:01:55,852 --> 00:02:01,648
+There are two members, CoAP member #1 and CoAP member #2, and the message count is 2.
+
+20
+00:02:03,047 --> 00:02:07,712
+Member #1 is a Non-confirmable POST, code 0.02.
+
+21
+00:02:07,762 --> 00:02:16,701
+Its 24-bit message ID is 2543266, and it carries Token 80f16d65.
+
+22
+00:02:16,751 --> 00:02:20,043
+The Uri-Path is science / observations.
+
+23
+00:02:20,093 --> 00:02:26,750
+And the Payload-length option, number 65000, gives 227 bytes for this member.
+
+24
+00:02:28,150 --> 00:02:32,873
+Member #2 is also a Non-confirmable POST, to the same resource.
+
+25
+00:02:32,923 --> 00:02:41,389
+It has a different message ID, 2543267, and a different Token, 98b6b902.
+
+26
+00:02:41,439 --> 00:02:45,129
+Its Payload-length is also 227 bytes.
+
+27
+00:02:46,529 --> 00:02:51,457
+The BPv7 primary block shows the bundle's lifetime on the wire.
+
+28
+00:02:51,507 --> 00:02:56,763
+Wireshark reports 90,000 milliseconds: 90 seconds.
+
+29
+00:02:56,813 --> 00:03:03,759
+That is the NON lifetime of 100 seconds, minus the maximum aggregation delay of 10 seconds.
+
+30
+00:03:03,809 --> 00:03:07,171
+And the primary-block CRC is reported as good.
+
+31
+00:03:08,571 --> 00:03:12,610
+Now the responses. Frame 53 comes back from Earth.
+
+32
+00:03:12,660 --> 00:03:18,370
+It is a Non-confirmable 2.01 Created response, with message ID 59.
+
+33
+00:03:18,420 --> 00:03:23,697
+Its Token, 80f16d65, matches the first POST.
+
+34
+00:03:25,097 --> 00:03:27,848
+Frame 70 is the second response.
+
+35
+00:03:27,898 --> 00:03:33,266
+It is also a Non-confirmable 2.01 Created, with message ID 60.
+
+36
+00:03:33,316 --> 00:03:38,520
+Its Token, 98b6b902, matches the second POST.
+
+37
+00:03:39,920 --> 00:03:45,470
+The result: two POSTs, one BPv7 request bundle, and two responses.
+
+38
+00:03:45,520 --> 00:03:54,890
+The application layer aggregated two messages, the bundle payload was 556 bytes, and the Rover matched both Earth replies.
+
+39
+00:03:54,940 --> 00:04:01,221
+This test used NSTART = 2, with an all-NON Aggregate lifetime of 90 seconds.
+
+40
+00:04:01,271 --> 00:04:07,935
+Functional aggregation is verified. But this exchange alone does not establish congestion safety:
+
+41
+00:04:07,985 --> 00:04:12,211
+that is our next study, under contact limits, outages and load.
+
+42
+00:04:13,661 --> 00:04:20,178
+Thank you for watching. The code and the Wireshark dissector are in our project repository.
