@@ -1,4 +1,4 @@
-# Experiment C: Payload Size Versus Aggregation Efficiency
+# Experiment A: Payload Size Versus Aggregation Efficiency
 
 **Project:** CoAP over BPv7 with RFC 9758 IPN addressing and CoAP message aggregation  
 **Report type:** Experimental results — First finding  
