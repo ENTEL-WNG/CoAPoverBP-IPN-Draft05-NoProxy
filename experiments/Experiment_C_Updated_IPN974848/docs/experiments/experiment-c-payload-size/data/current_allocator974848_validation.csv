@@ -1,0 +1,4 @@
+configuration,scenario,source_eid,destination_eid,coap_method,request_members,bp_application_payload_bytes,requested_bundle_lifetime_ms,reply_code,matched_responses,expected_responses,evidence_screenshot,notes
+current_974848,Safety GET / Single,ipn:974848.1.10,ipn:974848.3.64,GET,1,59,100000,2.05 Content,4,4,wireshark_single_get_59B.png,Observed 4/4 token-matched responses; No Payload-length option
+current_974848,Science POST / Single,ipn:974848.1.11,ipn:974848.3.64,POST,1,102,100000,2.01 Created,1,1,mission_control_successful_single_aggregate.png,One observed independent Science POST; JSON payload 50 B
+current_974848,Science POST / Aggregate,ipn:974848.1.11,ipn:974848.3.64,POST,2,212,90000,2.01 Created,2,2,wireshark_aggregate_212B_two_post.png,Two NON POSTs share one BPv7 bundle; each has Payload-length 50 B; distinct MID/Token

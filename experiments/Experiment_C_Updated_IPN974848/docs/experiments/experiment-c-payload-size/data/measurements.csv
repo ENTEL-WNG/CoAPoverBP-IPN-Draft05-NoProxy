@@ -1,0 +1,6 @@
+payload_bytes,single_bp_payload_bytes_each,single_tcp_reassembled_bytes_each,two_singles_bp_payload_bytes,two_singles_tcp_bytes,aggregate_bp_payload_bytes,aggregate_tcp_bytes,payload_length_extra_bytes_total,single_bp_tcpcl_overhead_bytes_each,aggregate_bp_tcpcl_overhead_bytes,saved_tcp_bytes,saving_percent,observations,single_request_frames,aggregate_request_frame
+50,97,146,194,292,202,251,8,49,49,41,14.0411,Fixed 50 B JSON,"73, 202",16
+100,147,196,294,392,302,352,8,49,50,40,10.2041,Fixed 100 B JSON,"8, 60",11
+227,274,324,548,648,556,606,8,50,50,42,6.4815,Earlier live Science JSON; not fixed benchmark pair,"9, 39",36
+500,547,597,1094,1194,1104,1154,10,50,50,40,3.3501,Fixed 500 B JSON,"11, 48",13
+1000,1047,1097,2094,2194,2104,2154,10,50,50,40,1.8232,Fixed 1000 B JSON; second Aggregate attempt succeeded,"9, 27",87
