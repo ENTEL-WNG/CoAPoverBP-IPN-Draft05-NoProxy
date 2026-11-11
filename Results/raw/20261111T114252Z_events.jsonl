@@ -1,0 +1,20 @@
+{"event":"response","app":"safety","time_epoch":1794397386.7407503,"timestamp_utc":"2026-11-11T11:43:06.740751+00:00","code":"2.05 Content","token":"7c39a8af","matched":true,"rtt_ms":84.759952}
+{"event":"queued","app":"safety","time_epoch":1794397386.8690023,"timestamp_utc":"2026-11-11T11:43:06.869003+00:00","token":"7c39a8af","method":"GET","mid":10734770,"uri":"coap://64.3.974848.ipn.alt/mission/safety-guidance"}
+{"event":"submitted","app":"safety","time_epoch":1794397386.8692458,"timestamp_utc":"2026-11-11T11:43:06.869246+00:00","tokens":["7c39a8af"],"bundle_kind":"Single","members":1,"bp_payload_bytes":59}
+{"event":"queued","app":"safety","time_epoch":1794397390.0767717,"timestamp_utc":"2026-11-11T11:43:10.076773+00:00","token":"eacb9d31","method":"GET","mid":10734771,"uri":"coap://64.3.974848.ipn.alt/mission/safety-guidance"}
+{"event":"submitted","app":"safety","time_epoch":1794397390.0769935,"timestamp_utc":"2026-11-11T11:43:10.076994+00:00","tokens":["eacb9d31"],"bundle_kind":"Single","members":1,"bp_payload_bytes":59}
+{"event":"response","app":"safety","time_epoch":1794397390.1818547,"timestamp_utc":"2026-11-11T11:43:10.181856+00:00","code":"2.05 Content","token":"eacb9d31","matched":true,"rtt_ms":66.380562}
+{"event":"queued","app":"science","time_epoch":1794397392.978305,"timestamp_utc":"2026-11-11T11:43:12.978306+00:00","token":"2f58293b","method":"POST","mid":2543435,"uri":"coap://64.3.974848.ipn.alt/science/observations"}
+{"event":"submitted","app":"science","time_epoch":1794397392.978513,"timestamp_utc":"2026-11-11T11:43:12.978513+00:00","tokens":["2f58293b"],"bundle_kind":"Single","members":1,"bp_payload_bytes":102}
+{"event":"response","app":"science","time_epoch":1794397393.0864587,"timestamp_utc":"2026-11-11T11:43:13.086459+00:00","code":"2.01 Created","token":"2f58293b","matched":true,"rtt_ms":76.37612}
+{"event":"response","app":"safety","time_epoch":1794397462.7638338,"timestamp_utc":"2026-11-11T11:44:22.763834+00:00","code":"2.05 Content","token":"684d4727","matched":true,"rtt_ms":47.851214}
+{"event":"queued","app":"safety","time_epoch":1794397462.7674956,"timestamp_utc":"2026-11-11T11:44:22.767496+00:00","token":"684d4727","method":"GET","mid":10734772,"uri":"coap://64.3.974848.ipn.alt/mission/safety-guidance"}
+{"event":"submitted","app":"safety","time_epoch":1794397462.7677205,"timestamp_utc":"2026-11-11T11:44:22.767721+00:00","tokens":["684d4727"],"bundle_kind":"Single","members":1,"bp_payload_bytes":59}
+{"event":"queued","app":"safety","time_epoch":1794397501.1329145,"timestamp_utc":"2026-11-11T11:45:01.132916+00:00","token":"0aaca775","method":"GET","mid":10734773,"uri":"coap://64.3.974848.ipn.alt/mission/safety-guidance"}
+{"event":"submitted","app":"safety","time_epoch":1794397501.133309,"timestamp_utc":"2026-11-11T11:45:01.133310+00:00","tokens":["0aaca775"],"bundle_kind":"Single","members":1,"bp_payload_bytes":59}
+{"event":"response","app":"safety","time_epoch":1794397501.1814516,"timestamp_utc":"2026-11-11T11:45:01.181452+00:00","code":"2.05 Content","token":"0aaca775","matched":true,"rtt_ms":71.603387}
+{"event":"queued","app":"science","time_epoch":1794397566.1016595,"timestamp_utc":"2026-11-11T11:46:06.101661+00:00","token":"2f8ecb82","method":"POST","mid":2543436,"uri":"coap://64.3.974848.ipn.alt/science/observations"}
+{"event":"response","app":"science","time_epoch":1794397567.035145,"timestamp_utc":"2026-11-11T11:46:07.035146+00:00","code":"2.01 Created","token":"2f8ecb82","matched":true,"rtt_ms":82.221415}
+{"event":"response","app":"science","time_epoch":1794397567.038791,"timestamp_utc":"2026-11-11T11:46:07.038792+00:00","code":"2.01 Created","token":"715deaac","matched":true,"rtt_ms":84.059526}
+{"event":"queued","app":"science","time_epoch":1794397567.3113544,"timestamp_utc":"2026-11-11T11:46:07.311356+00:00","token":"715deaac","method":"POST","mid":2543437,"uri":"coap://64.3.974848.ipn.alt/science/observations"}
+{"event":"submitted","app":"science","time_epoch":1794397567.3118136,"timestamp_utc":"2026-11-11T11:46:07.311814+00:00","tokens":["2f8ecb82","715deaac"],"bundle_kind":"Aggregate","members":2,"bp_payload_bytes":212}

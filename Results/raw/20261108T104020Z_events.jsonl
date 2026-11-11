@@ -1,0 +1,10 @@
+{"event":"queued","app":"science","time_epoch":1794134428.1015887,"timestamp_utc":"2026-11-08T10:40:28.101589+00:00","token":"517d4501","method":"POST","mid":2543304,"uri":"coap://64.3.0.ipn.alt/science/observations"}
+{"event":"queued","app":"science","time_epoch":1794134428.7343812,"timestamp_utc":"2026-11-08T10:40:28.734382+00:00","token":"ba787246","method":"POST","mid":2543305,"uri":"coap://64.3.0.ipn.alt/science/observations"}
+{"event":"submitted","app":"science","time_epoch":1794134428.7346365,"timestamp_utc":"2026-11-08T10:40:28.734637+00:00","tokens":["517d4501","ba787246"],"bundle_kind":"Aggregate","members":2,"bp_payload_bytes":302}
+{"event":"response","app":"science","time_epoch":1794134428.7721133,"timestamp_utc":"2026-11-08T10:40:28.772114+00:00","code":"2.01 Created","token":"517d4501","matched":true,"rtt_ms":88.377487}
+{"event":"response","app":"science","time_epoch":1794134428.7757878,"timestamp_utc":"2026-11-08T10:40:28.775789+00:00","code":"2.01 Created","token":"ba787246","matched":true,"rtt_ms":89.125453}
+{"event":"queued","app":"science","time_epoch":1794134430.5506446,"timestamp_utc":"2026-11-08T10:40:30.550646+00:00","token":"3899251d","method":"POST","mid":2543306,"uri":"coap://64.3.0.ipn.alt/science/observations"}
+{"event":"queued","app":"science","time_epoch":1794134438.8202913,"timestamp_utc":"2026-11-08T10:40:38.820292+00:00","token":"237f7891","method":"POST","mid":2543307,"uri":"coap://64.3.0.ipn.alt/science/observations"}
+{"event":"submitted","app":"science","time_epoch":1794134438.8205452,"timestamp_utc":"2026-11-08T10:40:38.820545+00:00","tokens":["3899251d","237f7891"],"bundle_kind":"Aggregate","members":2,"bp_payload_bytes":302}
+{"event":"response","app":"science","time_epoch":1794134438.8374565,"timestamp_utc":"2026-11-08T10:40:38.837457+00:00","code":"2.01 Created","token":"3899251d","matched":true,"rtt_ms":48.754786}
+{"event":"response","app":"science","time_epoch":1794134438.8399696,"timestamp_utc":"2026-11-08T10:40:38.839970+00:00","code":"2.01 Created","token":"237f7891","matched":true,"rtt_ms":49.297931}

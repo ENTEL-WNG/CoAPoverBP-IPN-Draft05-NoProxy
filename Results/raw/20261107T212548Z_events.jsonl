@@ -1,0 +1,6 @@
+{"event":"response","app":"safety","time_epoch":1794086755.7910552,"timestamp_utc":"2026-11-07T21:25:55.791056+00:00","code":"2.05 Content","token":"a23fbec7","matched":true,"rtt_ms":50.223893}
+{"event":"queued","app":"safety","time_epoch":1794086755.8090076,"timestamp_utc":"2026-11-07T21:25:55.809008+00:00","token":"a23fbec7","method":"GET","mid":10734741,"uri":"coap://64.3.0.ipn.alt/mission/safety-guidance"}
+{"event":"submitted","app":"safety","time_epoch":1794086755.8092473,"timestamp_utc":"2026-11-07T21:25:55.809248+00:00","tokens":["a23fbec7"],"bundle_kind":"Single","members":1,"bp_payload_bytes":54}
+{"event":"response","app":"safety","time_epoch":1794087373.3946733,"timestamp_utc":"2026-11-07T21:36:13.394674+00:00","code":"2.05 Content","token":"109cf20d","matched":true,"rtt_ms":70.532298}
+{"event":"queued","app":"safety","time_epoch":1794087373.4445307,"timestamp_utc":"2026-11-07T21:36:13.444531+00:00","token":"109cf20d","method":"GET","mid":10734742,"uri":"coap://64.3.0.ipn.alt/mission/safety-guidance"}
+{"event":"submitted","app":"safety","time_epoch":1794087373.444861,"timestamp_utc":"2026-11-07T21:36:13.444861+00:00","tokens":["109cf20d"],"bundle_kind":"Single","members":1,"bp_payload_bytes":54}

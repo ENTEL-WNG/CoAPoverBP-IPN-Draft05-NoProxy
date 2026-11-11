@@ -1,0 +1,3 @@
+{"event":"queued","app":"science","time_epoch":1794122874.9333165,"timestamp_utc":"2026-11-08T07:27:54.933317+00:00","token":"db6baa0f","method":"POST","mid":2543288,"uri":"coap://64.3.0.ipn.alt/science/observations"}
+{"event":"queued","app":"science","time_epoch":1794122878.1494343,"timestamp_utc":"2026-11-08T07:27:58.149435+00:00","token":"b14d82d0","method":"POST","mid":2543289,"uri":"coap://64.3.0.ipn.alt/science/observations"}
+{"event":"submitted","app":"science","time_epoch":1794122878.1496918,"timestamp_utc":"2026-11-08T07:27:58.149692+00:00","tokens":["db6baa0f","b14d82d0"],"bundle_kind":"Aggregate","members":2,"bp_payload_bytes":2104}

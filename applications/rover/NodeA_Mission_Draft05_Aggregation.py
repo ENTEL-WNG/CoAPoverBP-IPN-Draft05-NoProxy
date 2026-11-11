@@ -86,7 +86,7 @@ RFC7252_DEFAULT_NSTART = 1
 # aggregation of several response-bearing requests.
 #
 # Do NOT describe 5 as the RFC default.
-NSTART = 2  # Controlled aggregation experiment only
+NSTART = 1  # Controlled aggregation experiment only
 
 # Default NON_LIFETIME = MAX_LATENCY = 100 seconds.
 #

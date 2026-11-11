@@ -1,0 +1,5 @@
+observation,metric,value,units,evidence,limitation
+"Safety GET screenshot ~15:35, 2026-11-07",Application RTT,87,ms,User screenshot: 2.05 Content and 87ms,Single screenshot rounded; not a run-level statistic
+"Safety GET screenshot ~18:47, 2026-11-07",Application RTT,69.8,ms,User screenshot: application RTT 69.8 ms,Single screenshot; cannot claim repeatability
+Satellite TShark request bundle,Request BP payload,54,bytes,"Decoded BPv7 frames 17/22; Source ipn:1.10, Time 847388061773, Seq 1",One experiment only
+Satellite TShark response bundle,Response BP payload,103,bytes,"Decoded BPv7 frames 32/43; Source ipn:3.64, Time 847388061829, Seq 1",One experiment only

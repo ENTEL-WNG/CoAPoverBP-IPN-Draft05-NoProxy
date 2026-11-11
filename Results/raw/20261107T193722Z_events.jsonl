@@ -1,0 +1,8 @@
+{"event":"queued","app":"safety","time_epoch":1794080253.3316967,"timestamp_utc":"2026-11-07T19:37:33.331697+00:00","token":"992e2b02","method":"GET","mid":10734730,"uri":"coap://64.3.0.ipn.alt/mission/safety-guidance"}
+{"event":"submitted","app":"safety","time_epoch":1794080263.3615453,"timestamp_utc":"2026-11-07T19:37:43.361546+00:00","tokens":["992e2b02"],"bundle_kind":"Single","members":1,"bp_payload_bytes":54}
+{"event":"response","app":"safety","time_epoch":1794080263.3759177,"timestamp_utc":"2026-11-07T19:37:43.375920+00:00","code":"2.05 Content","token":"992e2b02","matched":true,"rtt_ms":78.783987}
+{"event":"queued","app":"science","time_epoch":1794080645.8120325,"timestamp_utc":"2026-11-07T19:44:05.812033+00:00","token":"796170d4","method":"POST","mid":2543257,"uri":"coap://64.3.0.ipn.alt/science/observations"}
+{"event":"submitted","app":"science","time_epoch":1794080655.8407304,"timestamp_utc":"2026-11-07T19:44:15.840731+00:00","tokens":["796170d4"],"bundle_kind":"Single","members":1,"bp_payload_bytes":274}
+{"event":"response","app":"science","time_epoch":1794080655.8432872,"timestamp_utc":"2026-11-07T19:44:15.843288+00:00","code":"2.01 Created","token":"796170d4","matched":true,"rtt_ms":41.774603}
+{"event":"queued","app":"safety","time_epoch":1794080932.6683464,"timestamp_utc":"2026-11-07T19:48:52.668347+00:00","token":"fe2276a3","method":"GET","mid":10734731,"uri":"coap://64.3.0.ipn.alt/mission/safety-guidance"}
+{"event":"submitted","app":"safety","time_epoch":1794080942.8878174,"timestamp_utc":"2026-11-07T19:49:02.887818+00:00","tokens":["fe2276a3"],"bundle_kind":"Single","members":1,"bp_payload_bytes":54}

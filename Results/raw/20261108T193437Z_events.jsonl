@@ -1,0 +1,2 @@
+{"event":"queued","app":"safety","time_epoch":1794166665.7809992,"timestamp_utc":"2026-11-08T19:37:45.781000+00:00","token":"48c4cd24","method":"GET","mid":10734765,"uri":"coap://64.3.974848.ipn.alt/mission/safety-guidance"}
+{"event":"submitted","app":"safety","time_epoch":1794166665.7813442,"timestamp_utc":"2026-11-08T19:37:45.781345+00:00","tokens":["48c4cd24"],"bundle_kind":"Single","members":1,"bp_payload_bytes":59}

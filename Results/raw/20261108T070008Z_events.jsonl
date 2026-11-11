@@ -1,0 +1,11 @@
+{"event":"queued","app":"science","time_epoch":1794121236.0430071,"timestamp_utc":"2026-11-08T07:00:36.043008+00:00","token":"bbfecbaa","method":"POST","mid":2543276,"uri":"coap://64.3.0.ipn.alt/science/observations"}
+{"event":"submitted","app":"science","time_epoch":1794121236.0435333,"timestamp_utc":"2026-11-08T07:00:36.043535+00:00","tokens":["bbfecbaa"],"bundle_kind":"Single","members":1,"bp_payload_bytes":147}
+{"event":"response","app":"science","time_epoch":1794121236.0799417,"timestamp_utc":"2026-11-08T07:00:36.079942+00:00","code":"2.01 Created","token":"bbfecbaa","matched":true,"rtt_ms":54.341598}
+{"event":"response","app":"science","time_epoch":1794121377.1675303,"timestamp_utc":"2026-11-08T07:02:57.167532+00:00","code":"2.01 Created","token":"eec8ece0","matched":true,"rtt_ms":76.954826}
+{"event":"queued","app":"science","time_epoch":1794121377.274376,"timestamp_utc":"2026-11-08T07:02:57.274377+00:00","token":"eec8ece0","method":"POST","mid":2543277,"uri":"coap://64.3.0.ipn.alt/science/observations"}
+{"event":"submitted","app":"science","time_epoch":1794121377.274798,"timestamp_utc":"2026-11-08T07:02:57.274799+00:00","tokens":["eec8ece0"],"bundle_kind":"Single","members":1,"bp_payload_bytes":147}
+{"event":"queued","app":"science","time_epoch":1794121666.7395916,"timestamp_utc":"2026-11-08T07:07:46.739593+00:00","token":"5e85308e","method":"POST","mid":2543278,"uri":"coap://64.3.0.ipn.alt/science/observations"}
+{"event":"response","app":"science","time_epoch":1794121669.0074859,"timestamp_utc":"2026-11-08T07:07:49.007487+00:00","code":"2.01 Created","token":"5e85308e","matched":true,"rtt_ms":136.28756}
+{"event":"response","app":"science","time_epoch":1794121669.0357232,"timestamp_utc":"2026-11-08T07:07:49.035724+00:00","code":"2.01 Created","token":"cf035758","matched":true,"rtt_ms":162.380574}
+{"event":"queued","app":"science","time_epoch":1794121669.0525603,"timestamp_utc":"2026-11-08T07:07:49.052561+00:00","token":"cf035758","method":"POST","mid":2543279,"uri":"coap://64.3.0.ipn.alt/science/observations"}
+{"event":"submitted","app":"science","time_epoch":1794121669.0554771,"timestamp_utc":"2026-11-08T07:07:49.055478+00:00","tokens":["5e85308e","cf035758"],"bundle_kind":"Aggregate","members":2,"bp_payload_bytes":302}

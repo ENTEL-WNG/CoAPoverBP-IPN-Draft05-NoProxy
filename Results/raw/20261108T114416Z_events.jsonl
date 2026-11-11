@@ -1,0 +1,2 @@
+{"event":"queued","app":"science","time_epoch":1794138257.6481266,"timestamp_utc":"2026-11-08T11:44:17.648128+00:00","token":"cd48055c","method":"POST","mid":2543411,"uri":"coap://64.3.0.ipn.alt/science/observations"}
+{"event":"submitted","app":"science","time_epoch":1794138257.6484313,"timestamp_utc":"2026-11-08T11:44:17.648432+00:00","tokens":["cd48055c"],"bundle_kind":"Single","members":1,"bp_payload_bytes":147}

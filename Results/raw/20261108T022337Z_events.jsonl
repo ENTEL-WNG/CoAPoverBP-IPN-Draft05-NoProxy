@@ -1,0 +1,11 @@
+{"event":"queued","app":"science","time_epoch":1794104656.4261389,"timestamp_utc":"2026-11-08T02:24:16.426140+00:00","token":"8c35b0cd","method":"POST","mid":2543268,"uri":"coap://64.3.0.ipn.alt/science/observations"}
+{"event":"submitted","app":"science","time_epoch":1794104656.4264314,"timestamp_utc":"2026-11-08T02:24:16.426432+00:00","tokens":["8c35b0cd"],"bundle_kind":"Single","members":1,"bp_payload_bytes":274}
+{"event":"response","app":"science","time_epoch":1794104656.43371,"timestamp_utc":"2026-11-08T02:24:16.433711+00:00","code":"2.01 Created","token":"8c35b0cd","matched":true,"rtt_ms":83.859926}
+{"event":"queued","app":"science","time_epoch":1794104666.1761546,"timestamp_utc":"2026-11-08T02:24:26.176155+00:00","token":"bb77fa1c","method":"POST","mid":2543269,"uri":"coap://64.3.0.ipn.alt/science/observations"}
+{"event":"submitted","app":"science","time_epoch":1794104666.1763906,"timestamp_utc":"2026-11-08T02:24:26.176391+00:00","tokens":["bb77fa1c"],"bundle_kind":"Single","members":1,"bp_payload_bytes":274}
+{"event":"response","app":"science","time_epoch":1794104666.1956637,"timestamp_utc":"2026-11-08T02:24:26.195664+00:00","code":"2.01 Created","token":"bb77fa1c","matched":true,"rtt_ms":29.862301}
+{"event":"queued","app":"science","time_epoch":1794107675.8083959,"timestamp_utc":"2026-11-08T03:14:35.808397+00:00","token":"990d8e47","method":"POST","mid":2543270,"uri":"coap://64.3.0.ipn.alt/science/observations"}
+{"event":"queued","app":"science","time_epoch":1794107676.8963175,"timestamp_utc":"2026-11-08T03:14:36.896319+00:00","token":"b77bf57f","method":"POST","mid":2543271,"uri":"coap://64.3.0.ipn.alt/science/observations"}
+{"event":"submitted","app":"science","time_epoch":1794107676.8967056,"timestamp_utc":"2026-11-08T03:14:36.896706+00:00","tokens":["990d8e47","b77bf57f"],"bundle_kind":"Aggregate","members":2,"bp_payload_bytes":556}
+{"event":"response","app":"science","time_epoch":1794107676.9180965,"timestamp_utc":"2026-11-08T03:14:36.918098+00:00","code":"2.01 Created","token":"990d8e47","matched":true,"rtt_ms":60.065837}
+{"event":"response","app":"science","time_epoch":1794107676.983884,"timestamp_utc":"2026-11-08T03:14:36.983885+00:00","code":"2.01 Created","token":"b77bf57f","matched":true,"rtt_ms":81.806362}
