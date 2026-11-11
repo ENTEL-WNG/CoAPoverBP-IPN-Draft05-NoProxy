@@ -1,0 +1,459 @@
+1
+00:00:00,800 --> 00:00:03,684
+Welcome to the IETF 127 Hackathon.
+
+2
+00:00:03,724 --> 00:00:10,478
+This is our Single Bundle demonstration
+of CoAP over Bundle Protocol version 7,
+
+3
+00:00:10,518 --> 00:00:18,218
+following draft five, with RFC 9758 three-element
+IPN addressing, and no proxy in between.
+
+4
+00:00:18,758 --> 00:00:23,735
+It is championed onsite by Professor
+Anna Calveras, and remotely by
+
+5
+00:00:23,775 --> 00:00:28,078
+Mahitab S. Elattar, of the
+Wireless Networks Group at UPC.
+
+6
+00:00:29,418 --> 00:00:31,666
+The goal is simple and precise.
+
+7
+00:00:31,706 --> 00:00:35,504
+First, the Rover sends one
+non-confirmable CoAP GET.
+
+8
+00:00:36,044 --> 00:00:41,616
+Second, the Satellite forwards it as a pure
+bundle relay, with no CoAP proxy and no
+
+9
+00:00:41,656 --> 00:00:43,171
+application processing.
+
+10
+00:00:43,711 --> 00:00:49,758
+Third, the Earth CoAP server receives the
+request and answers in a separate BPv7 bundle.
+
+11
+00:00:50,298 --> 00:00:56,842
+And fourth, the Rover matches that 2.05 Content
+response to its request, using the CoAP token.
+
+12
+00:00:58,182 --> 00:00:59,779
+Here is the architecture.
+
+13
+00:00:59,819 --> 00:01:04,887
+Think of it as a deep-space postal
+service, built from three virtual machines:
+
+14
+00:01:04,927 --> 00:01:06,983
+a Rover, a Satellite, and Earth.
+
+15
+00:01:07,523 --> 00:01:13,750
+The Rover writes a CoAP request, seals it
+inside a BPv7 bundle, and sends it over
+
+16
+00:01:13,790 --> 00:01:16,612
+the TCP Convergence Layer, version 3.
+
+17
+00:01:17,152 --> 00:01:20,028
+The Satellite behaves like a sorting office.
+
+18
+00:01:20,068 --> 00:01:26,390
+It reads only the address on the envelope, the
+destination endpoint ID, and forwards the bundle.
+
+19
+00:01:26,430 --> 00:01:28,113
+It never opens the letter:
+
+20
+00:01:28,153 --> 00:01:30,962
+there is no CoAP layer on this node at all.
+
+21
+00:01:31,502 --> 00:01:36,625
+Earth opens the bundle, processes the CoAP
+request, and sends its reply back to the
+
+22
+00:01:36,665 --> 00:01:38,367
+Rover in a brand-new bundle.
+
+23
+00:01:39,707 --> 00:01:49,783
+Every endpoint here has an address in the IPN
+scheme, and RFC 9758 gives that address three levels.
+
+24
+00:01:49,823 --> 00:01:54,994
+Take the Rover Safety
+application: ipn:974848.1.10.
+
+25
+00:01:55,534 --> 00:01:58,596
+The first level is the allocator, 974848.
+
+26
+00:01:58,636 --> 00:02:04,799
+It identifies the organization that hands
+out node numbers, a bit like the country
+
+27
+00:02:04,839 --> 00:02:06,539
+code of a phone number.
+
+28
+00:02:07,079 --> 00:02:09,449
+The second level is the node number, 1.
+
+29
+00:02:09,489 --> 00:02:15,319
+Within that allocator, it identifies one machine,
+here the Rover, like the phone number itself.
+
+30
+00:02:15,858 --> 00:02:18,704
+The third level is the service number, 10.
+
+31
+00:02:18,744 --> 00:02:23,857
+It selects one application on that
+node, like an extension on a phone line.
+
+32
+00:02:23,897 --> 00:02:27,155
+Service 10 is Safety, and
+service 11 is Science.
+
+33
+00:02:27,695 --> 00:02:29,275
+So, from left to right:
+
+34
+00:02:29,315 --> 00:02:33,640
+who assigned the number, which
+machine, and which application.
+
+35
+00:02:33,680 --> 00:02:39,414
+Earth's CoAP server is node 3, service 64,
+and the Satellite is node 2, service 0,
+
+36
+00:02:39,454 --> 00:02:41,385
+its administrative endpoint.
+
+37
+00:02:42,725 --> 00:02:47,769
+The same three numbers appear in three places.
+
+38
+00:02:47,809 --> 00:02:53,294
+As text, Earth's CoAP
+endpoint is ipn:974848.3.64.
+
+39
+00:02:53,834 --> 00:02:59,488
+On the wire, the bundle encodes it in CBOR:
+scheme code 2, for IPN, followed by an
+
+40
+00:02:59,528 --> 00:03:01,154
+array of three elements:
+
+41
+00:03:01,194 --> 00:03:03,167
+allocator, node, and service.
+
+42
+00:03:03,707 --> 00:03:11,768
+And inside CoAP, the Uri-Host option
+carries the same address written in reverse,
+
+43
+00:03:11,808 --> 00:03:15,768
+like a domain name: 64.3.974848.ipn.alt.
+
+44
+00:03:15,808 --> 00:03:19,268
+Service, then node, then allocator.
+
+45
+00:03:20,608 --> 00:03:22,362
+Now, the request itself.
+
+46
+00:03:22,402 --> 00:03:27,743
+The Rover Safety application sends a
+non-confirmable GET to the resource
+
+47
+00:03:27,783 --> 00:03:29,611
+/mission/safety-guidance.
+
+48
+00:03:30,151 --> 00:03:39,319
+It carries a 24-bit message ID and the
+token 684d4727, inside a 59-byte BP payload.
+
+49
+00:03:39,858 --> 00:03:46,005
+This is exactly one CoAP message in one bundle,
+so the Payload-length option is correctly absent.
+
+50
+00:03:47,345 --> 00:03:55,964
+In Mission Control, the Rover Safety
+application is registered at ipn:974848.1.10.
+
+51
+00:03:56,504 --> 00:04:02,441
+Its last exchange returned 2.05 Content
+with a round-trip time of 72 milliseconds,
+
+52
+00:04:02,481 --> 00:04:07,032
+and all four Safety GET replies
+were matched: four out of four.
+
+53
+00:04:08,372 --> 00:04:12,940
+On Earth, a live Wireshark capture
+shows the request as frame 14.
+
+54
+00:04:13,480 --> 00:04:23,993
+The bundle travels from ipn:974848.1.10
+to ipn:974848.3.64, carried over the TCP
+
+55
+00:04:24,033 --> 00:04:27,819
+Convergence Layer, version 3.
+
+56
+00:04:28,359 --> 00:04:35,283
+Inside it, our CoAP over BP dissector
+decodes one GET: type non-confirmable, code
+
+57
+00:04:35,323 --> 00:04:38,378
+0.01, with its message ID and token.
+
+58
+00:04:38,918 --> 00:04:43,895
+The options show the Uri-Host and the
+two Uri-Path segments, mission and
+
+59
+00:04:43,935 --> 00:04:47,100
+safety-guidance, and no Payload-length option.
+
+60
+00:04:48,440 --> 00:04:54,304
+For this baseline, the Rover requested a
+bundle lifetime of 100 seconds, that is
+
+61
+00:04:54,344 --> 00:04:58,880
+100,000 milliseconds, and the
+test logs report the same value.
+
+62
+00:04:59,420 --> 00:05:04,693
+NSTART stays at its default of one, so there
+is only one outstanding request at a time.
+
+63
+00:05:05,233 --> 00:05:07,384
+And the message framing is Single:
+
+64
+00:05:07,424 --> 00:05:10,218
+one non-confirmable CoAP message per bundle.
+
+65
+00:05:11,558 --> 00:05:16,304
+Earth answers in a separate bundle:
+
+66
+00:05:16,344 --> 00:05:25,330
+frame 31, travelling back from
+ipn:974848.3.64 to ipn:974848.1.10.
+
+67
+00:05:25,870 --> 00:05:33,063
+The response is non-confirmable, with code
+2.05 Content, in a 103-byte BP payload.
+
+68
+00:05:33,603 --> 00:05:40,487
+And most importantly, it carries the
+same token as the request: 684d4727.
+
+69
+00:05:41,827 --> 00:05:46,462
+This is how a non-confirmable
+exchange stays connected.
+
+70
+00:05:46,502 --> 00:05:50,628
+The request leaves the
+Rover with token 684d4727.
+
+71
+00:05:51,168 --> 00:05:57,529
+The response comes back with a different
+message ID, 239, but with the very same token.
+
+72
+00:05:58,069 --> 00:06:04,025
+The token, not the message ID, ties the answer
+to the question, and the token match passes.
+
+73
+00:06:05,365 --> 00:06:09,983
+The Earth server log tells the
+same story at application level.
+
+74
+00:06:10,023 --> 00:06:15,454
+It received a 59-byte ADU from the
+Rover, and parsed a Single CoAP GET for
+
+75
+00:06:15,494 --> 00:06:17,302
+/mission/safety-guidance.
+
+76
+00:06:17,842 --> 00:06:31,123
+It addressed the response from ipn:974848.3.64
+back to ipn:974848.1.10, with code 2.05 Content.
+
+77
+00:06:31,663 --> 00:06:37,577
+It sent a Single non-confirmable response,
+and the requested lifetime check, 100,000
+
+78
+00:06:37,617 --> 00:06:39,066
+milliseconds, passed.
+
+79
+00:06:40,406 --> 00:06:47,061
+We also checked the IPN encoding independently,
+in a companion capture from the same
+
+80
+00:06:47,101 --> 00:06:48,337
+prototype build.
+
+81
+00:06:48,377 --> 00:06:50,648
+Scheme code 2 identifies IPN.
+
+82
+00:06:51,188 --> 00:06:52,694
+The element count is 3:
+
+83
+00:06:52,734 --> 00:06:56,322
+allocator, node, and service,
+each encoded separately.
+
+84
+00:06:56,862 --> 00:07:02,749
+Both endpoints show allocator 974848,
+which Wireshark labels as the Example
+
+85
+00:07:02,789 --> 00:07:07,016
+allocator, each with its own
+node and service numbers.
+
+86
+00:07:08,356 --> 00:07:10,358
+Here are the observed results.
+
+87
+00:07:10,398 --> 00:07:14,713
+Four of four Safety GET replies,
+from the GUI and the Rover log.
+
+88
+00:07:15,253 --> 00:07:19,623
+A 59-byte Single request
+payload, in Wireshark frame 14.
+
+89
+00:07:20,163 --> 00:07:23,339
+A 2.05 Content response, in frame 31.
+
+90
+00:07:23,879 --> 00:07:27,854
+And a token match, confirmed by
+both the Earth and the Rover logs.
+
+91
+00:07:29,194 --> 00:07:31,319
+To be precise about scope:
+
+92
+00:07:31,359 --> 00:07:37,981
+this test verifies a direct non-confirmable
+Single GET, TCPCL version 3 and BPv7
+
+93
+00:07:38,021 --> 00:07:45,643
+transport, CoAP response and token matching,
+and three-element IPN in the companion capture.
+
+94
+00:07:46,183 --> 00:07:51,747
+Still to validate are delayed or disrupted
+contacts, congestion and loss scenarios,
+
+95
+00:07:51,787 --> 00:07:56,271
+wider draft-five interoperability,
+and final standards conformance.
+
+96
+00:07:57,611 --> 00:07:58,475
+In summary:
+
+97
+00:07:58,515 --> 00:08:04,886
+one CoAP non-confirmable GET, one BPv7
+request bundle, and one matching reply.
+
+98
+00:08:05,426 --> 00:08:06,775
+Thank you for watching.
+
+99
+00:08:06,815 --> 00:08:11,489
+We welcome your feedback from the CoRE
+and DTN working groups, and from fellow
+
+100
+00:08:11,529 --> 00:08:12,878
+Hackathon participants.

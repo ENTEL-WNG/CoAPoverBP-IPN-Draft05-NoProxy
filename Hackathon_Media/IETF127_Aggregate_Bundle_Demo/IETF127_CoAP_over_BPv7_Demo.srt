@@ -1,0 +1,362 @@
+1
+00:00:00,800 --> 00:00:05,624
+Welcome to our IETF 127
+Hackathon demonstration:
+
+2
+00:00:05,664 --> 00:00:15,252
+CoAP over Bundle Protocol version 7, with RFC
+9758 IPN addressing and CoAP message aggregation.
+
+3
+00:00:15,792 --> 00:00:21,223
+This work is championed onsite by
+Professor Anna Calveras, and remotely by
+
+4
+00:00:21,263 --> 00:00:25,511
+Mahitab S. Elattar, of the
+Wireless Networks Group at UPC.
+
+5
+00:00:26,851 --> 00:00:33,330
+Our implementation follows
+draft-ietf-core-coap-bp, version five.
+
+6
+00:00:33,370 --> 00:00:40,150
+CoAP runs directly over BPv7, with
+no CoAP-to-UDP proxy in the path.
+
+7
+00:00:40,690 --> 00:00:47,529
+Every endpoint uses the three-element
+IPN identifier defined in RFC 9758:
+
+8
+00:00:47,569 --> 00:00:50,262
+allocator, node, and service.
+
+9
+00:00:50,802 --> 00:00:56,323
+We tested two non-confirmable applications,
+a Safety GET and a Science POST, first
+
+10
+00:00:56,363 --> 00:00:59,307
+as single messages and then as an Aggregate.
+
+11
+00:00:59,847 --> 00:01:04,484
+And we validated the results at packet
+level, with a live capture alongside
+
+12
+00:01:04,524 --> 00:01:07,914
+independent application logs
+on Earth and on the Rover.
+
+13
+00:01:09,254 --> 00:01:12,036
+The testbed has three virtual machines.
+
+14
+00:01:12,076 --> 00:01:15,220
+The Rover, node one, hosts two applications:
+
+15
+00:01:15,260 --> 00:01:18,693
+Safety on service 10, and
+Science on service 11.
+
+16
+00:01:19,233 --> 00:01:24,845
+The Satellite, node two, is a store-and-forward
+relay that forwards BPv7 bundles.
+
+17
+00:01:25,385 --> 00:01:30,156
+Earth, node three, exposes the
+CoAP application on service 64.
+
+18
+00:01:30,696 --> 00:01:37,922
+All three nodes share allocator 974848, and
+they are linked with the TCP Convergence
+
+19
+00:01:37,962 --> 00:01:42,419
+Layer, version 3, with µD3TN
+forwarding the bundles.
+
+20
+00:01:43,760 --> 00:01:48,482
+This is our Mars Rover Mission Control
+interface, captured during the test run.
+
+21
+00:01:49,022 --> 00:01:54,416
+Here, the Science application sends one
+Aggregate built from two CoAP POST requests.
+
+22
+00:01:54,956 --> 00:02:00,314
+The Earth application receives both requests,
+and the Rover matches each of the two
+
+23
+00:02:00,354 --> 00:02:01,875
+responses independently:
+
+24
+00:02:01,915 --> 00:02:03,891
+two out of two replies matched.
+
+25
+00:02:05,231 --> 00:02:13,881
+On the Earth node, Wireshark 4.6.9 decodes
+the live TCPCL version 3 stream, captured
+
+26
+00:02:13,921 --> 00:02:15,950
+on interface enp0s8.
+
+27
+00:02:16,490 --> 00:02:18,775
+The decode goes layer by layer:
+
+28
+00:02:18,815 --> 00:02:25,078
+the convergence layer, the BPv7 bundle, and
+then CoAP, using an application-specific
+
+29
+00:02:25,118 --> 00:02:26,803
+CoAP over BP dissector.
+
+30
+00:02:27,343 --> 00:02:31,479
+Frame 76, highlighted here,
+carries the Aggregate request.
+
+31
+00:02:32,819 --> 00:02:37,919
+Before aggregating, we established
+a baseline with single messages.
+
+32
+00:02:37,959 --> 00:02:43,134
+The Safety GET used a 59-byte BP
+payload, and returned 2.05 Content.
+
+33
+00:02:43,674 --> 00:02:49,501
+The single Science POST used a 102-byte
+payload, and returned 2.01 Created.
+
+34
+00:02:50,041 --> 00:02:54,090
+As expected, single messages do not
+carry the Payload-length option.
+
+35
+00:02:55,430 --> 00:02:57,901
+Frame 76 is the key evidence.
+
+36
+00:02:58,441 --> 00:03:08,263
+One bundle travels from Rover Science,
+at IPN 974848.1.11, to the Earth CoAP
+
+37
+00:03:08,303 --> 00:03:11,377
+service, at 974848.3.64.
+
+38
+00:03:11,917 --> 00:03:19,956
+Its BP payload is 212 bytes, and the dissector
+identifies two separate CoAP POST messages inside it.
+
+39
+00:03:21,296 --> 00:03:27,332
+Each member is an independent non-confirmable
+POST, with its own 24-bit message ID
+
+40
+00:03:27,372 --> 00:03:28,666
+and its own token.
+
+41
+00:03:29,206 --> 00:03:35,502
+Member one and member two use consecutive message
+IDs and distinct tokens, as shown on the right.
+
+42
+00:03:36,042 --> 00:03:41,262
+Both members carry the experimental
+Payload-length option, set to 50 bytes, so the
+
+43
+00:03:41,302 --> 00:03:44,020
+receiver can delimit each member's payload.
+
+44
+00:03:45,360 --> 00:03:51,651
+Wireshark also confirms the bundle lifetime
+directly in the BPv7 primary block:
+
+45
+00:03:51,691 --> 00:03:54,456
+90,000 milliseconds, or 90 seconds.
+
+46
+00:03:54,996 --> 00:04:01,011
+This is exactly the configured non-confirmable
+lifetime of 100 seconds, minus the
+
+47
+00:04:01,051 --> 00:04:03,702
+10-second maximum aggregation delay.
+
+48
+00:04:04,242 --> 00:04:06,675
+And the primary-block CRC check is good.
+
+49
+00:04:08,015 --> 00:04:14,481
+The expanded endpoint fields independently
+verify the RFC 9758 encoding.
+
+50
+00:04:14,521 --> 00:04:18,095
+Scheme code 2 identifies the IPN scheme.
+
+51
+00:04:18,635 --> 00:04:24,127
+An element count of 3 means that allocator,
+node, and service are encoded separately.
+
+52
+00:04:24,667 --> 00:04:31,549
+Both the source, node 1 service 11, and
+the destination, node 3 service 64, use
+
+53
+00:04:31,589 --> 00:04:34,791
+allocator 974848 with three elements.
+
+54
+00:04:36,131 --> 00:04:41,604
+On Earth, the application parsed both
+POST members, and generated two separate
+
+55
+00:04:41,644 --> 00:04:44,219
+non-confirmable 2.01 Created replies.
+
+56
+00:04:44,759 --> 00:04:51,101
+Each reply carries the token of its own request,
+so the Rover matched both responses independently.
+
+57
+00:04:51,641 --> 00:04:54,968
+The application report and
+the Wireshark trace agree:
+
+58
+00:04:55,008 --> 00:04:57,699
+two complete request-response interactions.
+
+59
+00:04:59,039 --> 00:05:02,937
+In total, the run completed four
+of four Safety GET interactions,
+
+60
+00:05:03,477 --> 00:05:05,902
+and three of three Science POST interactions.
+
+61
+00:05:06,442 --> 00:05:10,488
+Two of those Science POSTs
+shared a single BPv7 Aggregate.
+
+62
+00:05:11,028 --> 00:05:12,676
+To be clear about scope:
+
+63
+00:05:12,716 --> 00:05:17,179
+this shows successful operation
+in a connected three-VM testbed.
+
+64
+00:05:17,219 --> 00:05:22,315
+It is not yet a claim about reliability
+under long outages or congestion.
+
+65
+00:05:23,655 --> 00:05:26,178
+Some open standards questions remain.
+
+66
+00:05:26,218 --> 00:05:31,928
+Draft five sets NSTART to one by default,
+while our controlled demo shows NSTART of
+
+67
+00:05:31,968 --> 00:05:36,708
+two, so implementation enforcement
+and congestion safety need review.
+
+68
+00:05:37,248 --> 00:05:43,096
+The Payload-length option, number 65000,
+is experimental, and its option bits do not
+
+69
+00:05:43,136 --> 00:05:46,741
+yet match the draft's
+critical and unsafe semantics.
+
+70
+00:05:47,281 --> 00:05:54,364
+Our testing covered non-confirmable unicast GET
+and POST only, with three-element IPN and no proxy.
+
+71
+00:05:54,904 --> 00:06:00,162
+Next, we will compare Single and Aggregate
+modes under scheduled contacts, link
+
+72
+00:06:00,202 --> 00:06:01,571
+disruption, and load.
+
+73
+00:06:01,611 --> 00:06:06,803
+This is functional implementation evidence,
+not a full interoperability claim.
+
+74
+00:06:08,143 --> 00:06:09,826
+Thank you for watching.
+
+75
+00:06:09,866 --> 00:06:13,046
+We demonstrated a CoAP Aggregate over BPv7:
+
+76
+00:06:13,086 --> 00:06:17,914
+two non-confirmable POSTs, one
+bundle, and two matched responses.
+
+77
+00:06:18,454 --> 00:06:23,739
+We warmly welcome implementation feedback
+from the CoRE and DTN working groups, and
+
+78
+00:06:23,779 --> 00:06:25,984
+from fellow Hackathon participants.

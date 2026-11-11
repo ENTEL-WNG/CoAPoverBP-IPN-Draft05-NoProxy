@@ -1,0 +1,701 @@
+1
+00:00:00,800 --> 00:00:04,332
+Welcome to this IETF 127 Hackathon tutorial.
+
+2
+00:00:04,372 --> 00:00:10,665
+In the next few minutes, you will learn
+how to use Wireshark 4.6.9 and our Lua
+
+3
+00:00:10,705 --> 00:00:17,404
+dissector to see CoAP messages travelling
+inside Bundle Protocol version 7 bundles.
+
+4
+00:00:17,944 --> 00:00:23,375
+This work is championed onsite by
+Professor Anna Calveras, and remotely by
+
+5
+00:00:23,415 --> 00:00:27,663
+Mahitab S. Elattar, of the
+Wireless Networks Group at UPC.
+
+6
+00:00:29,003 --> 00:00:31,125
+First, one important idea.
+
+7
+00:00:31,165 --> 00:00:37,941
+The experiment itself is implemented by
+modified aiocoap applications on the Rover
+
+8
+00:00:37,981 --> 00:00:43,344
+and on Earth, talking through AAP2
+to patched µD3TN bundle nodes.
+
+9
+00:00:43,884 --> 00:00:45,661
+Wireshark only observes.
+
+10
+00:00:45,701 --> 00:00:52,776
+tcpdump or dumpcap captures the packets, and our
+Lua dissector adds CoAP field-level decoding.
+
+11
+00:00:52,816 --> 00:00:54,138
+It is a dissector:
+
+12
+00:00:54,178 --> 00:00:57,696
+not a transport, not a
+proxy, and not a router.
+
+13
+00:00:58,236 --> 00:01:01,247
+The question we answer together is simple:
+
+14
+00:01:01,287 --> 00:01:07,204
+can one BPv7 bundle carry two non-confirmable
+POST requests, and still deliver two
+
+15
+00:01:07,244 --> 00:01:13,235
+correctly matched responses? To find out,
+we inspect the real frames, endpoint IDs,
+
+16
+00:01:13,275 --> 00:01:15,632
+lifetime, message IDs and tokens.
+
+17
+00:01:16,972 --> 00:01:18,816
+Here is the testbed.
+
+18
+00:01:18,856 --> 00:01:26,538
+The Rover, at 192.168.100.3, runs the
+Safety client on service 10, and the Science
+
+19
+00:01:26,578 --> 00:01:28,516
+client on service 11.
+
+20
+00:01:29,056 --> 00:01:34,686
+The Satellite, at 192.168.100.2,
+is only a BPv7 relay.
+
+21
+00:01:34,726 --> 00:01:39,516
+It forwards bundles, and it has no CoAP proxy.
+
+22
+00:01:40,056 --> 00:01:47,221
+Earth, at 192.168.100.1, runs
+the CoAP server on service 64.
+
+23
+00:01:47,761 --> 00:01:56,023
+We capture on Earth, on interface enp0s8,
+where the Satellite delivers bundles over
+
+24
+00:01:56,063 --> 00:01:59,024
+TCPCL version 3, on port 4773.
+
+25
+00:02:00,364 --> 00:02:08,151
+Before you filter anything, check which
+configuration your lab is running.
+
+26
+00:02:08,191 --> 00:02:17,036
+The recorded experiment uses allocator
+974848, with TCPCL ports 4771, 4772 and 4773.
+
+27
+00:02:17,576 --> 00:02:26,553
+Older repository documentation describes a
+baseline with allocator 0, and ports 4671 to 4673.
+
+28
+00:02:27,093 --> 00:02:34,715
+So always check the running µD3TN node ID and CLA
+settings, and use the values from your own lab.
+
+29
+00:02:34,755 --> 00:02:36,768
+Please do not mix the two.
+
+30
+00:02:38,108 --> 00:02:50,047
+Why Wireshark 4.6.9? Because its native BPv7
+decoder shows the RFC 9758 endpoint fields directly.
+
+31
+00:02:50,087 --> 00:02:55,481
+Take Earth's CoAP endpoint, ipn:974848.3.64.
+
+32
+00:02:56,021 --> 00:03:00,455
+Scheme code 2 tells you that this
+endpoint uses the IPN scheme.
+
+33
+00:03:00,995 --> 00:03:06,874
+An IPN element count of 3 tells you the
+address is encoded as three separate parts:
+
+34
+00:03:06,914 --> 00:03:08,942
+allocator, node, and service.
+
+35
+00:03:09,482 --> 00:03:16,967
+Here, the allocator is 974848, the node is 3,
+and the service is 64, Earth's CoAP application.
+
+36
+00:03:17,007 --> 00:03:17,687
+Remember:
+
+37
+00:03:17,727 --> 00:03:22,091
+scheme code and element count
+are two different fields.
+
+38
+00:03:23,431 --> 00:03:27,205
+You do not need to write a new dissector.
+
+39
+00:03:27,245 --> 00:03:34,926
+Clone the project repository,
+ENTEL-WNG/CoAPoverBP-IPN-Draft05-NoProxy, or use your
+
+40
+00:03:34,966 --> 00:03:36,601
+existing checkout.
+
+41
+00:03:37,141 --> 00:03:41,779
+The experimental Lua file
+is in the wireshark folder.
+
+42
+00:03:41,819 --> 00:03:46,986
+It decodes the BPv7 payload
+for IPN services 10, 11 and 64.
+
+43
+00:03:48,326 --> 00:03:51,892
+Next, find where your Wireshark
+looks for Lua plugins.
+
+44
+00:03:51,932 --> 00:03:56,968
+Open Help, About Wireshark, then Folders,
+and look for Personal Lua Plugins.
+
+45
+00:03:57,508 --> 00:04:01,647
+Create that folder if it is missing,
+and copy the Lua file into it.
+
+46
+00:04:01,687 --> 00:04:05,765
+Always use the exact folder that
+your running Wireshark shows you.
+
+47
+00:04:06,305 --> 00:04:12,887
+On a native Linux install, this is
+usually ~/.local/lib/wireshark/plugins.
+
+48
+00:04:12,927 --> 00:04:16,914
+The Flatpak version may use a different path.
+
+49
+00:04:16,954 --> 00:04:18,973
+Then restart Wireshark.
+
+50
+00:04:20,313 --> 00:04:25,869
+To check that the dissector loaded, open a
+bundle capture or start live traffic, and
+
+51
+00:04:25,909 --> 00:04:27,601
+try these display filters.
+
+52
+00:04:27,641 --> 00:04:31,132
+They go in Wireshark's filter
+bar, not in a terminal.
+
+53
+00:04:31,672 --> 00:04:34,337
+bpv7 shows all bundles.
+
+54
+00:04:34,377 --> 00:04:45,510
+coapbp05.count == 1 shows Single bundles, and
+coapbp05.count == 2 shows a two-member Aggregate.
+
+55
+00:04:45,550 --> 00:04:52,332
+bpv7.eid.ipn_count == 3 shows
+three-element IPN addresses.
+
+56
+00:04:52,872 --> 00:04:58,848
+In the packet details, you should see DTN
+Bundle Protocol Version 7, then CoAP over
+
+57
+00:04:58,888 --> 00:05:00,878
+BPv7, then each CoAP member.
+
+58
+00:05:00,918 --> 00:05:08,055
+If the count filter is not recognized, check the
+plugin folder, and look for Lua errors at startup.
+
+59
+00:05:09,395 --> 00:05:12,757
+There are two supported ways to capture.
+
+60
+00:05:12,797 --> 00:05:19,562
+With native Wireshark, simply select
+enp0s8 in the interface list, and start the
+
+61
+00:05:19,602 --> 00:05:22,710
+capture before the new TCPCL traffic.
+
+62
+00:05:22,750 --> 00:05:27,048
+Optionally, use a capture
+filter for TCP port 4773.
+
+63
+00:05:27,588 --> 00:05:34,014
+With the Wireshark 4.6.9 Flatpak, the
+sandbox cannot capture enp0s8 directly.
+
+64
+00:05:34,054 --> 00:05:40,397
+Instead, host tcpdump sends the packets
+through a named pipe into Wireshark.
+
+65
+00:05:40,437 --> 00:05:43,588
+These are still genuine, live packets.
+
+66
+00:05:44,128 --> 00:05:48,759
+The named-pipe workaround is the one
+used in the verified Earth demonstration.
+
+67
+00:05:50,099 --> 00:05:52,225
+Here is how that pipe works.
+
+68
+00:05:52,265 --> 00:05:56,634
+The packets stay on the real
+interface, enp0s8, on Earth.
+
+69
+00:05:57,174 --> 00:06:03,030
+Host tcpdump reads the live frames, and
+streams them, unbuffered, through a named pipe.
+
+70
+00:06:03,570 --> 00:06:10,549
+The sandboxed Wireshark reads the pipe,
+and decodes TCPCL version 3, BPv7, and CoAP
+
+71
+00:06:10,589 --> 00:06:12,240
+with the Lua plugin.
+
+72
+00:06:12,780 --> 00:06:19,350
+On Earth, run the helper script from the
+scripts folder, with the interface name.
+
+73
+00:06:19,390 --> 00:06:22,695
+Keep its terminal open while you capture;
+
+74
+00:06:22,735 --> 00:06:26,367
+it does not restart µD3TN or any application.
+
+75
+00:06:26,407 --> 00:06:32,732
+To capture only the Earth TCPCL port,
+set the capture filter to tcp port 4773.
+
+76
+00:06:34,072 --> 00:06:37,504
+Now, find your TCPCL conversation.
+
+77
+00:06:37,544 --> 00:06:45,878
+At first, packets may appear as plain TCP.
+Use the display filter tcp.port == 4773
+
+78
+00:06:45,918 --> 00:06:53,230
+for the current run, or 4673 for the
+older baseline, together with bpv7.
+
+79
+00:06:53,770 --> 00:07:02,382
+If the packets still remain TCP, use Analyze,
+Decode As, and select TCPCL version 3 for port 4773.
+
+80
+00:07:02,422 --> 00:07:10,681
+And start the capture before the TCPCL handshake
+when you can, because TCP reassembly matters.
+
+81
+00:07:11,221 --> 00:07:12,055
+One more tip:
+
+82
+00:07:12,095 --> 00:07:17,031
+a single Ethernet frame's length is
+not the full bundle or payload length.
+
+83
+00:07:17,071 --> 00:07:19,385
+Always read the reassembled values.
+
+84
+00:07:20,725 --> 00:07:22,523
+Let's look at real results.
+
+85
+00:07:22,563 --> 00:07:25,926
+Frame 14 is the Single
+request, captured on Earth.
+
+86
+00:07:26,466 --> 00:07:37,523
+It travels from the Rover Safety service,
+ipn:974848.1.10, to Earth's CoAP service,
+
+87
+00:07:37,563 --> 00:07:42,603
+ipn:974848.3.64, over TCPCL version 3.
+
+88
+00:07:43,143 --> 00:07:50,308
+Inside is exactly one non-confirmable GET,
+with its 24-bit message ID and token, in
+
+89
+00:07:50,348 --> 00:07:52,131
+a 59-byte BP payload.
+
+90
+00:07:52,671 --> 00:07:56,309
+Because it is a Single message,
+there is no Payload-length option.
+
+91
+00:07:57,649 --> 00:08:11,074
+Earth replies in a separate bundle, frame 31,
+from ipn:974848.3.64 back to ipn:974848.1.10.
+
+92
+00:08:11,614 --> 00:08:17,676
+It is a non-confirmable 2.05 Content
+response, in a 103-byte payload.
+
+93
+00:08:18,216 --> 00:08:24,395
+And it carries the request's token,
+684d4727, so the Rover can match it.
+
+94
+00:08:25,735 --> 00:08:27,345
+Now, the Aggregate test.
+
+95
+00:08:27,385 --> 00:08:32,569
+In this controlled experiment, NSTART
+is set to two, the buffer limit is two
+
+96
+00:08:32,609 --> 00:08:36,074
+messages, and the aggregation
+timer is ten seconds.
+
+97
+00:08:36,614 --> 00:08:40,340
+The Science client queues
+two non-confirmable POSTs.
+
+98
+00:08:40,380 --> 00:08:47,221
+Each has its own 24-bit message ID and token,
+and each carries 50 bytes of application payload.
+
+99
+00:08:47,761 --> 00:09:00,316
+Both share the same source, ipn:974848.1.11,
+and the same destination, ipn:974848.3.64.
+
+100
+00:09:01,656 --> 00:09:03,765
+Frame 76 shows the result.
+
+101
+00:09:04,305 --> 00:09:16,996
+One BPv7 bundle travels from
+ipn:974848.1.11 to ipn:974848.3.64.
+
+102
+00:09:17,536 --> 00:09:22,665
+Its 212-byte application payload
+contains two CoAP POST messages:
+
+103
+00:09:22,705 --> 00:09:26,244
+one bundle, not two separate request bundles.
+
+104
+00:09:27,584 --> 00:09:32,384
+The Lua dissector expands each member
+independently. Here is member one:
+
+105
+00:09:32,424 --> 00:09:33,930
+a non-confirmable POST.
+
+106
+00:09:34,470 --> 00:09:41,421
+You can read its 24-bit message ID,
+2543436, and its token, 2f8ecb82.
+
+107
+00:09:41,461 --> 00:09:47,803
+Member two follows, with the next
+message ID and its own token.
+
+108
+00:09:48,343 --> 00:09:54,967
+Each member also shows its URI options and the
+experimental Payload-length option: 50 bytes.
+
+109
+00:09:56,307 --> 00:10:01,628
+Wireshark 4.6.9 confirms the
+addressing for both endpoints.
+
+110
+00:10:01,668 --> 00:10:03,809
+Scheme code 2 means IPN.
+
+111
+00:10:04,349 --> 00:10:06,414
+The IPN element count is 3.
+
+112
+00:10:06,954 --> 00:10:09,185
+The allocator is 974848.
+
+113
+00:10:09,225 --> 00:10:16,374
+The source is node 1, service 11, and
+the destination is node 3, service 64.
+
+114
+00:10:17,714 --> 00:10:25,070
+Next, verify the bundle's lifetime and integrity
+in the BPv7 primary block. The version is 7.
+
+115
+00:10:25,610 --> 00:10:29,943
+The lifetime is 90,000
+milliseconds, that is, 90 seconds.
+
+116
+00:10:30,483 --> 00:10:35,456
+The CRC type is CRC-16,
+and the CRC status is Good.
+
+117
+00:10:35,996 --> 00:10:41,069
+Remember to read these values from the primary
+block, not from the Ethernet frame length.
+
+118
+00:10:42,409 --> 00:10:44,382
+Finally, the application view.
+
+119
+00:10:44,422 --> 00:10:48,876
+Rover Mission Control reports four
+of four matching Safety replies,
+
+120
+00:10:49,416 --> 00:10:51,707
+and three of three matching Science replies.
+
+121
+00:10:52,247 --> 00:10:57,998
+The two Aggregate POST members received
+separate 2.01 Created responses, each with
+
+122
+00:10:58,038 --> 00:10:59,340
+its matching token.
+
+123
+00:11:00,680 --> 00:11:04,168
+When you present your
+results, be precise. Verified:
+
+124
+00:11:04,208 --> 00:11:10,004
+Single and Aggregate framing, three-element
+endpoint IDs, and token-matched responses.
+
+125
+00:11:10,544 --> 00:11:11,451
+Experimental:
+
+126
+00:11:11,491 --> 00:11:17,352
+Payload-length option number 65000 is not
+a final assigned number, so inspect its
+
+127
+00:11:17,392 --> 00:11:20,922
+option properties before
+making standards claims.
+
+128
+00:11:21,462 --> 00:11:22,221
+Congestion:
+
+129
+00:11:22,261 --> 00:11:28,178
+NSTART of two was used only in a controlled
+test, so congestion safety still needs
+
+130
+00:11:28,218 --> 00:11:30,285
+deployment-specific analysis.
+
+131
+00:11:30,825 --> 00:11:31,494
+And scope:
+
+132
+00:11:31,534 --> 00:11:33,689
+the Lua plugin decodes traffic.
+
+133
+00:11:33,729 --> 00:11:37,089
+It does not implement
+CoAP, routing, or a proxy.
+
+134
+00:11:37,129 --> 00:11:43,463
+This is a working prototype, not proof of full
+draft-five conformance or interoperability.
+
+135
+00:11:44,803 --> 00:11:48,528
+To share a reproducible run,
+follow these six steps. One:
+
+136
+00:11:48,568 --> 00:11:52,954
+install the matching Lua plugin,
+in the folder Wireshark shows you.
+
+137
+00:11:53,494 --> 00:11:53,769
+Two:
+
+138
+00:11:53,809 --> 00:12:00,377
+start the capture before the test, using
+native enp0s8 or the Flatpak pipe launcher.
+
+139
+00:12:00,917 --> 00:12:03,901
+Three: confirm the decoding:
+
+140
+00:12:03,941 --> 00:12:09,084
+TCPCL version 3, then
+BPv7, then CoAP over BPv7.
+
+141
+00:12:09,624 --> 00:12:09,952
+Four:
+
+142
+00:12:09,992 --> 00:12:11,572
+record the IPN fields:
+
+143
+00:12:11,612 --> 00:12:14,737
+element count, allocator, node and service.
+
+144
+00:12:15,277 --> 00:12:15,635
+Five:
+
+145
+00:12:15,675 --> 00:12:18,102
+record the transaction details:
+
+146
+00:12:18,142 --> 00:12:22,639
+message IDs, tokens, payload
+sizes, lifetime and replies.
+
+147
+00:12:23,179 --> 00:12:23,735
+And six:
+
+148
+00:12:23,775 --> 00:12:30,288
+save the pcapng file and the logs, without
+secrets, credentials, or private local files.
+
+149
+00:12:31,628 --> 00:12:34,477
+Everything you need is in the repository:
+
+150
+00:12:34,517 --> 00:12:39,830
+the experimental Lua dissector, the
+code, captures, and setup documentation.
+
+151
+00:12:40,370 --> 00:12:44,253
+Thank you for following this
+tutorial. Onsite Champion:
+
+152
+00:12:44,293 --> 00:12:50,101
+Professor Anna Calveras. Remote Champion:
+Mahitab S. Elattar. Enjoy the Hackathon!
