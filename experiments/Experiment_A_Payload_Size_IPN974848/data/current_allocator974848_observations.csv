@@ -1,0 +1,4 @@
+evidence_type,source_eid,destination_eid,tcpcl_earth_port,coap_method,members_in_bundle,application_payload_bytes_each,bp_payload_bytes,bundle_lifetime_ms,request_mids,request_tokens,matched_response_codes,wireshark_frame,notes
+single_safety_get,ipn:974848.1.10,ipn:974848.3.64,4773,GET,1,,59,100000,10734772,684d4727,2.05 Content,14,Actual Wireshark capture; not part of a paired Science payload-size comparison
+aggregate_science_post,ipn:974848.1.11,ipn:974848.3.64,4773,POST + POST,2,50,212,90000,2543436;2543437,2f8ecb82;715deaac,2.01 Created;2.01 Created,76,Payload-length 50 for each member; 2 independent Single replies; three-element EIDs
+single_science_post_application_log_only,ipn:974848.1.11,ipn:974848.3.64,4773,POST,1,50,102,100000,2543435,2f58293b,2.01 Created,,Rover and Earth logs; single POST not identified in supplied new Wireshark screenshots; no captured TCP reassembly length
