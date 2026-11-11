@@ -1,4 +1,4 @@
-# Wireshark 4.6.9 — three-component IPN and CoAP-over-BPv7 analysis
+# Wireshark 4.6.9 — Three-Component IPN and CoAP-over-BPv7 analysis
 
 This folder supports the IETF Hackathon experimental, direct (no-proxy) CoAP-over-BPv7 implementation based on draft-ietf-core-coap-bp-05 and RFC 9758. It contains two complementary tools:
 
