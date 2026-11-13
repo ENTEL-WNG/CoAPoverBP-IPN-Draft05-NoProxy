@@ -18,7 +18,7 @@ inspect 'BPv7 capture' "$REPO_ROOT/evidence/Earth_IPN974848_Single_and_Aggregate
 inspect 'Patched µD3TN bin' "$UD3TN_ROOT/build/posix/ud3tn"
 inspect 'Route Python' "$CONFIG_PY"
 case "${1:-}" in
- rover) inspect 'Rover Python' "$ROVER_PY" ;;
+ rover) inspect 'Rover GUI Python' "$HOME/coapbp/experiments/draft05-ipn/workcopy/ud3tn/.venv-protoc-modern/bin/python" ;;
  earth) inspect 'Earth Python' "$EARTH_PY" ;;
  satellite) : ;;
  '') echo 'TIP: Add rover|earth|satellite argument to inspect this VM role.' ;;
