@@ -4,11 +4,11 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 case "${1:-}" in
   rover)
-    NODE='ipn:0.1.0'; PORT=4671; SOCK='/tmp/ud3tn-ipn3-lab' ;;
+    NODE='ipn:974848.1.0'; PORT=4771; SOCK='/tmp/ud3tn-974848-rover' ;;
   satellite)
-    NODE='ipn:0.2.0'; PORT=4672; SOCK='/tmp/ud3tn-ipn3-sat' ;;
+    NODE='ipn:974848.2.0'; PORT=4772; SOCK='/tmp/ud3tn-974848-sat' ;;
   earth)
-    NODE='ipn:0.3.0'; PORT=4673; SOCK='/tmp/ud3tn-ipn3-earth' ;;
+    NODE='ipn:974848.3.0'; PORT=4773; SOCK='/tmp/ud3tn-974848-earth' ;;
   *) echo 'Usage: scripts/start_ud3tn.sh rover|satellite|earth' >&2; exit 2 ;;
 esac
 require_file "$UD3TN_ROOT/build/posix/ud3tn"
