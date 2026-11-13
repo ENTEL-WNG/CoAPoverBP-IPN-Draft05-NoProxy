@@ -1,87 +1,123 @@
-# CoAP over BPv7 — Three-component IPN, Draft-05, no proxy
+# CoAP over BPv7 — Draft-05, three-component IPN, no proxy
 
-**Research prototype** · [IETF CoAP-over-BP draft-05](https://datatracker.ietf.org/doc/draft-ietf-core-coap-bp/05/) · [Reproduce the IETF demo](docs/ietf-demo.md)
+**IETF 127 Hackathon research prototype** · [CoAP over BPv7 Internet-Draft (draft-ietf-core-coap-bp-05)](https://datatracker.ietf.org/doc/draft-ietf-core-coap-bp-05/) · [RFC 9758: three-component IPN](https://www.rfc-editor.org/rfc/rfc9758) · [RFC 9171: BPv7](https://www.rfc-editor.org/rfc/rfc9171)
 
-This repository records an **experimental, direct CoAP-over-BPv7 implementation** developed for the ENTEL/WNG research testbed. CoAP applications communicate through µD3TN and AAP2, **without a CoAP-to-UDP proxy**. The implementation uses RFC 9758-style three-component IPN endpoint identifiers, a modified aiocoap serializer, and a custom Wireshark Lua dissector.
+This repository contains an **experimental implementation of direct CoAP over Bundle Protocol Version 7 (BPv7)** for a Rover–Satellite–Earth delay/disruption-tolerant network. CoAP applications use a modified **aiocoap** implementation and **µD3TN/AAP2** to send CoAP messages in BPv7 bundles over TCPCLv3. **No CoAP-to-UDP proxy is used.** The laboratory implementation and packet dissector are research prototypes, not a claim of complete draft conformance.
 
-> **Status (2 November 2026):** Safety GET and Science POST **Single and Aggregate request exchanges were demonstrated** in the three-VM lab. This is **not** a claim of full draft-05 conformance, production security, congestion safety, or successful installation from a clean clone. In the tested path, Earth disaggregates Aggregate requests and returns **separate Single response bundles**.
+> **Current lab configuration (13 November 2026):** RFC 9758 **three-component `ipn:` EIDs with allocator `974848`**, TCPCLv3 ports **4771–4773**, and the **Experiment C Mission Control v2** GUI. A later, allocator-974848 test demonstrated Single request/response exchanges and an Aggregate carrying two Science NON POST requests in one BPv7 payload, with separately matched Earth responses. Earlier allocator-`0` results are retained as **historical evidence**, not presented as measurements of the newer setup.
 
-## Architecture
+## Three-VM architecture
 
 ```text
-ROVER (192.168.100.3)           SATELLITE (192.168.100.2)          EARTH (192.168.100.1)
-µD3TN ipn:0.1.0 :4671          µD3TN ipn:0.2.0 :4672            µD3TN ipn:0.3.0 :4673
-  Safety  ipn:0.1.10  -------\                                     /-->  CoAP server ipn:0.3.64
-  Science ipn:0.1.11  --------> BPv7 / TCPCLv3 relay  ----------/     GET  /mission/safety-guidance
-                                                                    POST /science/observations
-          <---------------------- two individual Single responses ---
+  ROVER                         SATELLITE                         EARTH
+  192.168.100.3                 192.168.100.2                     192.168.100.1
+  ipn:974848.1.0                ipn:974848.2.0                    ipn:974848.3.0
+  TCPCLv3 :4771                 TCPCLv3 :4772                     TCPCLv3 :4773
+
+  Safety  ipn:974848.1.10 --\
+                              +---- BPv7 / TCPCLv3 relay ----> CoAP server
+  Science ipn:974848.1.11 --/                               ipn:974848.3.64
+                                                              GET /mission/safety-guidance
+                                                              POST /science/observations
+               <------------- BPv7 Single response bundles ---
 ```
 
-- Rover CoAP authority: `64.3.0.ipn.alt`, mapping to the **CoAP application** endpoint `ipn:0.3.64` (not to the bare Earth node `ipn:0.3.0`). The `.ipn.alt` host is an application-level non-DNS naming convention.
-- Two distinct Rover AAP2 application registrations: **Safety** service 10 and **Science** service 11. Their aggregation buffers and pending-request state are separate.
-- Satellite is a **BP relay**, not a CoAP proxy.
-- Three VMs use VirtualBox internal interface `enp0s8` and the above fixed IPs. Contact schedules are supplied by AAP2 and expire after one hour.
+| Node | Internal interface | Node EID | TCPCLv3 | Application EIDs |
+| --- | --- | --- | ---: | --- |
+| Rover | `enp0s8` · `192.168.100.3` | `ipn:974848.1.0` | 4771 | Safety `ipn:974848.1.10`; Science `ipn:974848.1.11` |
+| Satellite | `enp0s8` · `192.168.100.2` | `ipn:974848.2.0` | 4772 | BP relay; **not** a CoAP proxy |
+| Earth | `enp0s8` · `192.168.100.1` | `ipn:974848.3.0` | 4773 | CoAP server `ipn:974848.3.64` |
 
-See [architecture](docs/architecture.md) for the node table and [installation](docs/installation.md) for dependencies and daemon commands.
+CoAP authorities follow the local `.ipn.alt` naming convention, for example:
 
-## Evidence from the verified runs
+- Safety: `coap://64.3.974848.ipn.alt/mission/safety-guidance`
+- Science: `coap://64.3.974848.ipn.alt/science/observations`
 
-| Test | Incoming BPv7 application payload on Earth | Earth application result |
+The addresses above correspond to **allocator.node.service**. The Earth CoAP application is `ipn:974848.3.64`, **not** the bare Earth node EID `ipn:974848.3.0`. The prototype uses **NON (non-confirmable) CoAP** requests. It does not use the `dtn:` endpoint scheme.
+
+## Current functional evidence — allocator 974848
+
+The updated [Experiment C package](experiments/Experiment_C_Updated_IPN974848/README.md) documents the later three-component IPN implementation and preserves screenshots and measurements separately from the original allocator-`0` payload-size study.
+
+| Observed test | BPv7 application payload | Verified observation |
 | --- | ---: | --- |
-| Safety Aggregate | **116 B** | 2 NON GET requests parsed; 2 independent `2.05 Content` responses |
-| Science Aggregate | **556 B** | 2 NON POST requests parsed; 2 independent `2.01 Created` responses |
-| Science request/response capture | Frame **14** Aggregate; frames **31, 49** separate responses | Request Tokens **`9fc152cf`**, **`5ae01fab`** match corresponding response Tokens |
+| Safety Single GET | **59 B** | **4/4** Token-matched `2.05 Content` responses in the documented test |
+| Science Single POST | **102 B** | **1/1** Token-matched `2.01 Created` response |
+| Science Aggregate | **212 B** | **Two NON POST requests in one BPv7 bundle**; **2/2** Token-matched `2.01 Created` responses |
+| BPv7 Primary Block | — | Captured **90,000 ms** bundle lifetime in the documented trace |
+| RFC 9758 EID encoding | — | Wireshark displayed **IPN Element Count = 3**, allocator **974848**, and the expected node/service numbers |
 
-Science Aggregate frame 14 contains request 24-bit MIDs **4858056** and **4858057** and per-member **Payload-length = 227**. The custom Wireshark decoder displays both members directly beneath BPv7. The Safety Aggregate has **Payload-length = 3** per GET. Rover terminal logs separately demonstrated successful request/response Token matching and `Pending: 0` in earlier runs. **Do not conflate those earlier console-run MIDs with the later Wireshark-captured Science run.** See [experimental results](docs/results.md).
+In the recorded Science Aggregate, each POST used a **50-byte Payload-length**, and the two member MIDs and Tokens were distinct. Earth parsed both CoAP requests and returned **two separate Single response bundles**. These results describe a **particular recorded test**, not a general reliability, performance or interoperability guarantee.
 
-### Experimental protocol choices and limitations
+For Wireshark screenshots, per-test evidence and separation of historical/current datasets, see [Experiment C](experiments/Experiment_C_Updated_IPN974848/README.md). For capture instructions and the Lua dissector, see [Wireshark documentation](wireshark/README.md).
 
-- **24-bit CoAP Message ID**, distinct MID and 4-byte Token per request.
-- Experimental CoAP **Payload-length option number 65000** in the local aiocoap fork. It is **not an assigned final draft option number**, and its option-bit semantics need review before standards claims.
-- Controlled experimental **NSTART = 2 per Rover application**; buffer limit **2 messages** and maximum aggregation delay **10 seconds**. **Cross-application congestion control is not established.**
-- In the observed path, two requests share **one BPv7 payload**, but the two responses use **two separate BPv7 bundles**; response aggregation remains future work.
-- The current no-proxy implementation and decoder are an experiment-specific wire format; interoperability and full draft-05 compliance need additional tests.
+### Historical results — older allocator 0
 
-## Repository map
+Some older code examples, documents and captures use `ipn:0.*.*`, TCPCL ports `4671–4673`, and different payload sizes. For example, earlier Safety and Science Aggregates had **116 B** and **556 B** application payloads, respectively. These are **not the same run** as the 212 B Science Aggregate under allocator `974848`. Do **not** mix packet-frame numbers, Tokens, metrics or efficiency percentages from the two configurations.
 
-| Directory | Contents |
-| --- | --- |
-| `applications/rover/` | Draft-05 CoAP client/aggregation engine and Mars Rover GUI |
-| `applications/earth/` | Draft-05 Earth CoAP application server |
-| `vendor/aiocoap/` | Collected modified aiocoap source, setup metadata and upstream licenses |
-| `patches/ud3tn/` | Validated nine-file IPN/CBOR/AAP2 patch against the recorded source snapshot |
-| `wireshark/` | Lua BPv7→CoAP decoder for IPN services 10/11/64 |
-| `scripts/` | Three-node daemon launch, contact configuration and app run scripts |
-| `evidence/safety/`, `evidence/science/` | Original saved packet captures from Earth |
-| `docs/` | Installation, protocol architecture, results, demo and source provenance |
-| `experiments/` | Instructions for documenting new runs |
+The original experiment's payload-size efficiency numbers are preserved in [Experiment C's historical section](experiments/Experiment_C_Updated_IPN974848/README.md#4-historical-payload-size-comparison--allocator-0-only) and [earlier results notes](docs/results.md). They have **not** been remeasured as a complete five-size study under allocator `974848`.
 
-## Start here
+## Launch the latest Mission Control GUI on the prepared Rover VM
 
-**Already have the verified three VirtualBox VMs?** Read the [existing-lab steps](docs/installation.md#route-a-reuse-the-existing-tested-three-vm-lab) and follow the [IETF demonstration](docs/ietf-demo.md). The shell scripts intentionally take their µD3TN checkout and Python environment locations from configurable environment variables, falling back to the known lab locations.
-
-**Starting from a new checkout?** Read the [fresh-environment prerequisites and limitations](docs/installation.md#route-b-prepare-an-independent-checkout-not-yet-validated). The µD3TN source is distributed as a **patch**, not a complete upstream checkout. You must obtain the corresponding original source tree at Git commit `37b968d5742cbd75292b534f3421fac70acc46b7`, apply the patch, build it and confirm the environment dependencies. The source remote for that commit still needs to be recorded.
+**On the existing configured Rover VM only**, after the µD3TN node, contacts, Earth application and required dependencies have already been prepared:
 
 ```bash
-# On each test VM after cloning this private repository:
-./scripts/check_setup.sh
-# Start daemon, contacts and app according to docs/ietf-demo.md
+cd ~/CoAPoverBP-IPN-Draft05-NoProxy/gui-v2/IETF127_Experiment_C_Package
+bash ./run_gui_congestion_results.sh
 ```
 
-## Provenance, licensing and security
+This is the launcher used for the latest GUI demonstration. It invokes:
 
-- Original laboratory source revision: **`37b968d5742cbd75292b534f3421fac70acc46b7`**. The nine-file µD3TN patch was checked both against the base Git index and in reverse against the modified live working tree. See [provenance](docs/upstream-provenance.md).
-- Modified aiocoap is redistributed with its `MIT` and `BSD-3-Clause` license texts. Do not infer a license for the *entire project* from those vendored licenses; confirm the project license with the ENTEL-WNG maintainers.
-- The testbed previously warned that its AAP2 interface had **no configured BDM secret**. Treat it as an **isolated, trusted lab only**. Do not expose these defaults on public networks.
-- Packet captures contain testbed IPs and application data. Do not commit credentials, tokens used for authentication, VM images, local runtime state or private logs. CoAP correlation Tokens shown in traces are **not GitHub authentication tokens**.
+- `mission_control_v2_live_metrics.py` — live Mission Control GUI and measurements;
+- `experiment_c_engine/NodeA_Mission_Draft05_Aggregation.py` — Rover CoAP/BPv7 engine;
+- AAP2 Unix socket `/tmp/ud3tn-974848-rover.aap2.sock`;
+- Live measurement outputs under `Results/raw/`, with result-generation scripts for charts/tables where sufficient observations exist.
 
-## AUTHORS
-**Mahitab Salah Elattar** ([mahitab.elattar@outlook.com](mailto:mahitab.elattar@outlook.com)) — Lead developer of the IPN Draft-05 implementation
+**Do not start a second GUI while one is running, and do not stop/restart GUI-managed µD3TN nodes just to run or inspect the GUI.** The launcher has **machine-specific absolute paths**, including a particular Python virtual environment; this command is **not yet a validated one-command install for Hackathon participants on other systems**.
 
-**Anna Calveras** ([anna.calveras@upc.edu](mailto:anna.calveras@upc.edu)) — Project supervisor
+The GUI starts with **NSTART=1**. Its experimental mode controls can change the effective limit to **NSTART=2** for a controlled aggregation test. This does **not** establish deployment-wide congestion-control safety.
 
-## Acknowledgements
-We would like to thank **Carles Gómez** for his valuable guidance, technical discussions, and feedback on this research work.
+## Protocol and experimental limitations
 
-## Funding
-This work is partially supported by Spanish MCIN/AEI/10.13039/501100011033/FEDER/UE through project **PID2023-146378NB-I00**.
+- CoAP over BPv7 is implemented experimentally using **direct AAP2-to-µD3TN** transport, not a UDP proxy.
+- Requests use **NON CoAP** with a **24-bit MID** and distinct request Tokens. The demonstrated Aggregate contains **two member requests**; the receiver replies with separate Single messages.
+- The modified aiocoap code currently uses a **prototype Payload-length option number `65000`**. This is **not** an assigned final draft option number, and its Critical/Unsafe properties must be addressed before standards-level interoperability claims.
+- Experimental aggregation uses a **two-message buffer** and an approximately **10-second maximum aggregation delay** in the documented implementation. NSTART=2 is controlled experimental behavior; safe congestion control across multiple applications has **not** been demonstrated.
+- Three-component IPN encoding requires the project-specific patched µD3TN and modified aiocoap sources; stock binaries should **not** be assumed compatible without validation.
+- Contact schedules, clock synchronization, the selected Python environments, local TCPCL ports and AAP2 registration settings are all important. This prototype is **not production-hardened**.
+
+## Repository guide
+
+| Location | Purpose / status |
+| --- | --- |
+| [`gui-v2/IETF127_Experiment_C_Package/`](gui-v2/IETF127_Experiment_C_Package/) | **Current demonstrated Rover GUI, launcher and Experiment C engine** |
+| [`experiments/Experiment_C_Updated_IPN974848/`](experiments/Experiment_C_Updated_IPN974848/) | Current allocator-974848 functional evidence and separate historical comparison |
+| [`wireshark/`](wireshark/) | RFC 9758 inspection guidance, Lua CoAP-over-BPv7 decoder and live-capture helper |
+| [`evidence/`](evidence/) | Saved packet captures and historical evidence; inspect filenames/configuration before comparing runs |
+| [`Hackathon_Media/`](Hackathon_Media/) | Hackathon media and demonstration resources |
+| [`vendor/aiocoap/`](vendor/aiocoap/) | Collected locally modified aiocoap source and upstream licensing information |
+| [`patches/ud3tn/`](patches/ud3tn/) | Project patch for µD3TN, including IPN encoding support |
+| [`applications/rover/`](applications/rover/) and [`applications/earth/`](applications/earth/) | **Older application entry points**; verify configuration before use |
+| [`scripts/`](scripts/) | Mixed-generation helpers; some default scripts **still use allocator 0 / ports 4671–4673** and must **not** be used unchanged for allocator 974848 |
+| [`docs/`](docs/) | Earlier installation, architecture, demo and results documentation; **some instructions still describe the older configuration** |
+| [`Results/`](Results/) | Collected run outputs, event records and result-processing scripts; empty files are not evidence of successful experiments |
+
+**Important for participants:** The newer `974848` GUI and evidence coexist with historical allocator-`0` scripts/documents. Until every launcher and guide has been reconciled, **do not follow the older `scripts/start_ud3tn.sh` or `docs/ietf-demo.md` commands blindly** for the current topology. This README identifies the validated current configuration but does **not** assert that a clean-clone end-to-end setup has been tested.
+
+## Source provenance, licensing and safety
+
+- The recorded original µD3TN laboratory source revision is `37b968d5742cbd75292b534f3421fac70acc46b7`; see [source provenance](docs/upstream-provenance.md). A matching upstream source remote and a reproducible clean-clone workflow still require confirmation.
+- Vendored aiocoap components include their own upstream licenses. **Do not infer a license for the entire repository** without confirmation from the ENTEL-WNG maintainers.
+- The laboratory previously reported an AAP2 configuration without a BDM secret. Use this setup **only on isolated, trusted lab networks** until security is properly reviewed.
+- Do not publish credentials, VM images, authentication secrets or private runtime state. CoAP correlation Tokens in the protocol trace are **not account authentication tokens**.
+
+## Project team
+
+- **Mahitab Salah Elattar** — Remote Hackathon champion and lead developer of the IPN Draft-05 implementation · [mahitab.elattar@outlook.com](mailto:mahitab.elattar@outlook.com)
+- **Prof. Anna Calveras** — Onsite Hackathon champion and research supervisor · [anna.calveras@upc.edu](mailto:anna.calveras@upc.edu)
+- **Affiliation:** Universitat Politècnica de Catalunya (UPC), Wireless Networks Group (WNG)
+
+**Acknowledgement:** We thank **Prof. Carles Gómez** for technical guidance, discussions and feedback. AI-assisted tools were used for documentation editing and some experiment-related development support; experimental claims are distinguished from independently verified results.
+
+**Funding:** This work was funded in part by the Spanish **MCIU/AEI/10.13039/501100011033/FEDER/UE** through project **PID2023-146378NB-I00**.
+
