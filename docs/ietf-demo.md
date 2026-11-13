@@ -1,141 +1,200 @@
-# IETF 127 demonstration — CoAP-over-BPv7 Draft-05, IPN no proxy
+# IETF 127 Hackathon demonstration — CoAP over BPv7 Draft-05, three-component IPN, no proxy
 
-**Audience:** project supervisors / IETF hackathon participants. **Goal:** visibly show that two distinct CoAP requests travel inside **one BPv7 request bundle**, with independent MIDs and Tokens, through Rover→Satellite→Earth, and that Earth replies to each request. **No proxy** is used.
+**Audience:** IETF 127 Hackathon participants, project champions and supervisors  
+**Scope:** Current three-VM laboratory setup using RFC 9758 three-component `ipn:` EIDs, **allocator `974848`**, and direct CoAP over BPv7 through µD3TN/AAP2. **No CoAP-to-UDP proxy** is used.
 
-> This guide reproduces the known laboratory procedure. A new VM installation still requires the patched µD3TN checkout and compatible Python environments described in [installation.md](installation.md). **Avoid modifying the live working files in order to run a demonstration.**
+**Demo objective:** Show the Rover sending CoAP NON GET/POST requests through the Satellite BPv7 relay to Earth; inspect the RFC 9758 source/destination EIDs, independent CoAP Message IDs (MIDs) and Tokens, and—when aggregation is enabled—two CoAP requests in one BPv7 bundle with separate Earth responses.
 
-## Preparation checklist
+> **Important:** This document distinguishes the **current allocator-974848 configuration** from **historical allocator-0 experiments**. Packet sizes, frame numbers and Tokens from older experiments must not be presented as current measurements. These commands describe the prepared laboratory, **not a proven clean-clone installation**. Do not restart or replace GUI-managed µD3TN daemons, contacts, sockets, or live application processes during a demonstration.
 
-- Three powered-on VirtualBox VMs, with `enp0s8` IPs `192.168.100.3` (Rover), `.2` (Satellite) and `.1` (Earth); verify ping.
-- Correct **patched** `ud3tn` binary on all three VMs and working AAP2 sockets.
-- Earth CoAP application `ipn:0.3.64`; Rover Safety `ipn:0.1.10` and Science `ipn:0.1.11`.
-- Wireshark on **Earth** (capture interface `enp0s8`; TCPCLv3 over TCP port **4673**); experimental Lua plugin installed if detailed CoAP fields are needed.
-- No live previous run using the same sockets/ports; **reuse existing processes or stop them deliberately before starting another instance**.
+## 1. Architecture and preparation
 
-## 1. Start or confirm µD3TN on the three nodes
+| Node | VirtualBox interface and IP | Node EID | TCPCLv3 port | Application EID |
+| --- | --- | --- | ---: | --- |
+| Rover | `enp0s8` · `192.168.100.3` | `ipn:974848.1.0` | `4771` | Safety `ipn:974848.1.10`; Science `ipn:974848.1.11` |
+| Satellite | `enp0s8` · `192.168.100.2` | `ipn:974848.2.0` | `4772` | BPv7 forwarding only; **no CoAP proxy** |
+| Earth | `enp0s8` · `192.168.100.1` | `ipn:974848.3.0` | `4773` | CoAP server `ipn:974848.3.64` |
 
-Each block runs on the **named VM**, in its own terminal, and stays running. All commands are from the successful lab configuration. The helper `scripts/start_ud3tn.sh` prints a clear error if the patched binary is missing:
+```text
+Rover Safety  ipn:974848.1.10 ---\
+                                   \    BPv7 / TCPCLv3
+                                    > Rover -> Satellite -> Earth CoAP ipn:974848.3.64
+                                   /    (no UDP proxy)
+Rover Science ipn:974848.1.11 ---/
+                         <--- separate BPv7 Single response bundles ---
+```
 
-**Rover VM:**
+- Safety URI: `coap://64.3.974848.ipn.alt/mission/safety-guidance`
+- Science URI: `coap://64.3.974848.ipn.alt/science/observations`
+- The Earth CoAP **application** EID is `ipn:974848.3.64`; the bare Earth **node** EID is `ipn:974848.3.0`.
+- Confirm that all VMs can reach one another on the internal network, that their clocks are synchronized (`chronyc tracking` where available), and that patched µD3TN, required virtual environments and AAP2 sockets exist. Use the read-only `./scripts/check_setup.sh` to inspect file presence, remembering that it is **not** an end-to-end test.
+
+### Preserve the already-running demonstration
+
+Before opening another GUI or launching a daemon, inspect current processes on the relevant VM:
+
+```bash
+ps -eo pid,args | grep -E '[u]d3tn|[m]ission_control_v2|[N]odeB_Mission'
+```
+
+**If the relevant process is already running, reuse it; do not run another copy.** In particular, the latest Rover GUI can control contacts and maintain in-memory NodeA engines. Closing it or relaunching its supporting nodes can disrupt the experiment. When you need fresh contacts or an ON/OFF schedule, coordinate changes with the person controlling the live testbed.
+
+## 2. Starting a fresh, non-running laboratory (only when authorized)
+
+**Skip this section entirely if the three nodes and GUI are already active.** Run these commands only on a prepared lab with the required binaries/virtual environments. The startup scripts below have been updated on the `IPN_RFC_9758_Hackathon` branch for allocator `974848` and ports `4771–4773`.
+
+From the root of the checked-out **Hackathon branch** on each named VM:
+
+**Rover VM**
 
 ```bash
 cd ~/CoAPoverBP-IPN-Draft05-NoProxy
 ./scripts/start_ud3tn.sh rover
 ```
 
-**Satellite VM:**
+**Satellite VM**
 
 ```bash
 cd ~/CoAPoverBP-IPN-Draft05-NoProxy
 ./scripts/start_ud3tn.sh satellite
 ```
 
-**Earth VM:**
+**Earth VM**
 
 ```bash
 cd ~/CoAPoverBP-IPN-Draft05-NoProxy
 ./scripts/start_ud3tn.sh earth
 ```
 
-For reference, the tested executable used `--node-id ipn:0.X.0 --aap-socket /tmp/...aap1.sock --aap2-socket /tmp/...aap2.sock --cla 'tcpclv3:*,PORT' --bp-version 7 --log-level 4` with **ports 4671, 4672, 4673 respectively**. `scripts/start_ud3tn.sh` supplies these values.
+Each command stays running in its terminal. It uses patched µD3TN, the corresponding three-component node EID, the AAP2 Unix sockets beginning `/tmp/ud3tn-974848-`, and TCPCLv3 ports `4771`, `4772` and `4773`. A missing binary or an occupied socket/port must be investigated; **do not forcibly stop GUI-managed processes**.
 
-## 2. Install/reinstall the four one-hour forwarding contacts
+## 3. Configure forwarding contacts (fresh lab only)
 
-Use a **new terminal** on each VM; keep the daemons running. These script commands are the tested contact configuration, with a 3600-second duration and a 100000-byte volume parameter. Run them just before the experiment because the contacts expire.
+The contact scripts create time-limited contacts with a **3600-second** scheduled duration. Do **not** run them repeatedly during a live GUI-controlled ON/OFF experiment. In a fresh session, use separate terminals on the relevant VMs after their daemons are ready.
 
-**Satellite** (both forwarding directions):
+**Satellite — forward to both Earth and Rover**
 
 ```bash
 cd ~/CoAPoverBP-IPN-Draft05-NoProxy
 ./scripts/satellite_contacts.sh
 ```
 
-**Earth** (return through Satellite):
+**Earth — return traffic to Rover through Satellite**
 
 ```bash
 cd ~/CoAPoverBP-IPN-Draft05-NoProxy
 ./scripts/earth_contacts.sh
 ```
 
-**Rover** (reach Earth through Satellite):
+**Rover — forward toward Earth through Satellite**
 
 ```bash
 cd ~/CoAPoverBP-IPN-Draft05-NoProxy
 ./scripts/rover_contacts.sh
 ```
 
-Check the respective µD3TN terminal for routing ADD/FIB entries and a successful TCPCL handshake. **A route command exiting successfully alone does not prove packets were forwarded.**
+The `*_contacts.sh` scripts above have been aligned with the current allocator-974848 topology on the Hackathon branch. A successful contact-configuration command does not prove forwarding: confirm contact/route activity and actual TCPCL/BPv7 traffic in the daemon logs and Wireshark.
 
-## 3. Run the CoAP applications
+## 4. Current Earth application and Rover Mission Control GUI
 
-**Earth**, in another terminal:
+**Earth (only if the server is not already running):**
 
 ```bash
 cd ~/CoAPoverBP-IPN-Draft05-NoProxy
 ./scripts/earth_server.sh
 ```
 
-**Rover**, in a graphical Ubuntu desktop terminal:
+The updated launcher targets the copied working application:
+
+`applications/earth/NodeB_Mission_Draft05_IPN_Allocator974848.py`
+
+The verified Earth lab also runs this application from its original location under `~/coapbp/experiments/draft05-ipn/`. **Do not run both copies simultaneously.** Its AAP2 socket is `/tmp/ud3tn-974848-earth.aap2.sock`, with CoAP service EID `ipn:974848.3.64`.
+
+**Rover: use the actual Experiment C Mission Control v2 launcher** (not the older `scripts/rover_gui.sh`):
 
 ```bash
-cd ~/CoAPoverBP-IPN-Draft05-NoProxy
-./scripts/rover_gui.sh
+cd ~/CoAPoverBP-IPN-Draft05-NoProxy/gui-v2/IETF127_Experiment_C_Package
+bash ./run_gui_congestion_results.sh
 ```
 
-GUI status should report **Safety: Registered | Science: Registered**. It may need the original rover-background image asset from the lab; see [installation.md](installation.md). For this controlled experiment the engine parameters were **NSTART=2 per application**, **BUFFER_LIMIT=2**, **MAX_AGGR_DELAY_SECONDS=10**. This is **not a congestion-safety result**.
+This is the known working launch route on the prepared Rover VM. It runs `mission_control_v2_live_metrics.py` with the Experiment C engine `experiment_c_engine/NodeA_Mission_Draft05_Aggregation.py`, the Rover socket `/tmp/ud3tn-974848-rover.aap2.sock`, and live measurement output under `Results/raw/`. **It contains absolute paths specific to the prepared Rover VM and is not a portable one-command participant installation.** If the GUI is already open, keep using the existing instance.
 
-## 4. Start packet capture on Earth
+The launcher starts with **NSTART=1**. The GUI's experimental controls can change to **NSTART=2** for an aggregation demonstration. Select the appropriate mode in the GUI and verify the actual logs/packets; **two clicks alone do not guarantee an Aggregate**. The aggregation buffer holds up to two messages with an approximately 10-second maximum delay in the tested implementation. NSTART=2 is an experimental setting, **not a congestion-safety proof**.
 
-1. Start Wireshark → `enp0s8`. Optional capture filter: `tcp port 4673`. Choose the **Earth TCPCL port 4673**, not the other nodes' ports.
-2. Set **Decode As** for TCP port **4673 → TCPCLv3** if needed.
-3. Use display filter `bpv7` to see request and response bundles.
-4. With the Lua plugin installed, use **`coapbp05.count == 2`** to show the Aggregate requests and expand **CoAP member #1 / #2**. Responses are individual Single messages, so inspect them under `bpv7`.
-5. Save the capture in `.pcapng` format with the interface, date, test and NSTART value in the filename.
+## 5. Capture and decode BPv7 traffic on Earth with Wireshark
 
-Install the already-packaged dissector on Earth, if necessary:
+The known lab used **Wireshark 4.6.9** with native RFC 9758 three-component EID decoding and the repository's separate experimental CoAP Lua dissector.
 
-```bash
-mkdir -p "$HOME/.local/lib/wireshark/plugins"
-cp ~/CoAPoverBP-IPN-Draft05-NoProxy/wireshark/coapbp05_ipn64_PL65000.lua \
-   "$HOME/.local/lib/wireshark/plugins/"
-# Close and relaunch Wireshark to load the plugin.
-```
+1. Install the existing file `wireshark/coapbp05_ipn64_PL65000.lua` in the **Personal Lua Plugins** directory shown under **Help → About Wireshark → Folders** for the *specific Wireshark installation*. Restart Wireshark. Do not assume the native Ubuntu and Flatpak plugin directories are the same.
+2. On a **native** Wireshark installation with capture permissions, start a live capture on `enp0s8`. The relevant Earth TCPCL port is **4773** (not the historical port 4673). Optionally use capture filter `tcp port 4773`.
+3. If the Earth installation uses **Flatpak Wireshark 4.6.9** and does not list capture interfaces, launch the existing repository helper from a terminal instead:
 
-## 5. Run three visible checks
+   ```bash
+   cd ~/CoAPoverBP-IPN-Draft05-NoProxy
+   bash wireshark/wireshark-ipn-live.sh enp0s8
+   ```
 
-| Demo | Rover action | On Earth / Rover, expected observable result |
+   The helper performs host capture and supplies a named pipe to Wireshark. Participants need not run `tcpdump` manually; the helper uses it internally and may request `sudo`. A locally installed shortcut such as `~/bin/wireshark-ipn-live` may serve the same purpose on the prepared VM, but is **not assumed to exist on every participant machine**. Keep the helper terminal open during the capture.
+4. If traffic appears only as undecoded TCP, use **Analyze → Decode As** for the actual TCPCLv3 connection/port, and ensure the capture includes enough packets for dissection/reassembly.
+5. Apply these **Wireshark display filters** one at a time:
+
+   ```text
+   tcp.port == 4773
+   bpv7
+   bpv7.eid.ipn_count == 3
+   bpv7.eid.ipn_alloc == 974848
+   coapbp05.count == 1
+   coapbp05.count == 2
+   ```
+
+6. Expand the BPv7 source/destination EIDs to show **IPN Element Count = 3**, allocator `974848`, node and service. In an Aggregate, expand the Lua-decoded **CoAP member #1 / #2**, MIDs, Tokens and Payload-length. Earth replies were demonstrated as **separate Single response bundles**, not one aggregated response bundle.
+7. Save `.pcapng` evidence and correlate it with the matching Rover and Earth logs. A bundle observed arriving at Earth does not, by itself, prove Rover received its response.
+
+See [`wireshark/README.md`](../wireshark/README.md) for the version-specific plugin and capture instructions.
+
+## 6. Three participant exercises
+
+| Exercise | Participant action | Evidence to collect |
 | --- | --- | --- |
-| Single baseline | Click **ROVER SAFETY GET** once and allow 10 s for timer flush | One Single CoAP GET in **54-byte BPv7 payload**; response code `2.05 Content`; Payload-length option absent |
-| Safety Aggregate | Click **ROVER SAFETY GET** **twice within 10 s**, after the previous request has finished | **One 116-byte BPv7 request payload** containing 2 NON GET members (Payload-length 3 each); 2 Single 2.05 responses; distinct request MIDs and Tokens |
-| Science Aggregate | Click **ROVER SCIENCE POST** **twice within 10 s** | **One 556-byte BPv7 request payload** containing 2 NON POST members (Payload-length 227 each); 2 Single 2.01 responses; distinct MIDs and Tokens |
+| **A. Single baseline** | Use the prepared GUI's Single/NSTART=1 mode and send a Safety NON GET or Science NON POST. | One request bundle; source/destination `ipn:974848.*.*`; absent Aggregate-specific Payload-length on a Single, request Token, corresponding Earth response and Rover match if observed. |
+| **B. Two-request Aggregate** | In a controlled GUI aggregation mode that allows **NSTART=2**, send two requests from the **same Rover application EID** toward the same Earth EID, within the buffer window. | **One BPv7 request bundle with two CoAP members**, distinct MIDs/Tokens, Payload-length per member; Earth processes both and sends separate response bundles. Confirm via Wireshark and matching logs rather than assuming success from button clicks. |
+| **C. ON/OFF link challenge** | With the lab owner's permission, use the **existing GUI contact controls** to introduce an OFF interval on Rover–Satellite or Satellite–Earth, then restore contact. Do not kill µD3TN or change VM network interfaces indiscriminately. | Time the OFF/ON intervals; note locally queued/submitted requests versus confirmed delivery; identify when the delayed bundle traverses the link; compare latency, contact state, missing/late replies and saved `.pcapng` evidence. |
 
-If both requests do not land inside the same Aggregate, verify that the GUI **does not immediately call `flush_coap_buffer()`** on every click and is loading the experimental `NodeA_Mission_Draft05_Aggregation.py`. Recheck NSTART and the 10-second timer in the **running** process. Do not manually alter a working live implementation during an IETF demo.
+**Discussion for participants:** What changes when Earth is unreachable? Can BPv7 preserve a request until a forwarding contact becomes available, subject to bundle lifetime and routing? Does aggregation reduce the number of request bundles? How does waiting for aggregation change latency and risk of exceeding a deadline? These are questions to investigate, **not outcomes to assume**.
 
-## 6. Packet walkthrough: saved Science proof
+## 7. Recorded proof from the current allocator-974848 experiment
 
-The committed capture `evidence/science/Earth_Draft05_IPN_Science_Aggregate_NSTART2.pcapng` was inspected with the Lua plugin:
+The separately documented [updated Experiment C report](../experiments/Experiment_C_Updated_IPN974848/README.md) includes the following observations:
 
-| Frame | Direction | BPv7 payload | CoAP fields |
-| --- | --- | ---: | --- |
-| **14** | Rover Science `ipn:1.11` → Earth `ipn:3.64` | **556 B** | 2 NON POST members; MIDs **4858056, 4858057**; Tokens **`9fc152cf`, `5ae01fab`**; URI `/science/observations`; Payload-length **227** each |
-| **31** | Earth `ipn:3.64` → Rover Science `ipn:1.11` | **54 B** | Single NON **2.01 Created**, response MID **15**, Token **`9fc152cf`** |
-| **49** | Earth `ipn:3.64` → Rover Science `ipn:1.11` | **54 B** | Single NON **2.01 Created**, response MID **16**, Token **`5ae01fab`** |
+| Recorded test | Observed BPv7 application payload | Recorded outcome |
+| --- | ---: | --- |
+| Safety Single NON GET | **59 B** | **4/4** Token-matched `2.05 Content` responses in the documented test |
+| Science Single NON POST | **102 B** | **1/1** Token-matched `2.01 Created` response |
+| Science Aggregate: two NON POSTs | **212 B** | Two members, **50 B Payload-length per POST**; **2/2** Token-matched `2.01 Created` responses |
 
-Wireshark displays `ipn:1.11`/`ipn:3.64` as abbreviations of zero-allocator three-part EIDs. The BPv7 `Payload-Size` values (556 and 54) are **not** Ethernet frame lengths. **Do not use the recorded example MIDs as predictions for new runs**; the client/server counters change over time.
+The documented current Science Aggregate used request MIDs `2543436` and `2543437` and Tokens `2f8ecb82` and `715deaac`. Wireshark screenshots from this configuration show allocator `974848` and three-element IPN EIDs; the Experiment C report also records a **90,000 ms** lifetime in frame **76** of one documented capture. **Frame numbers and data sizes vary by run and payload**: they are not fixed protocol values, and the Mission Control GUI may create Science JSON payloads of different sizes.
 
-The **earlier console run** with request MIDs **4858053 / 4858054** and matched Rover responses is **not** the same run as the above packet capture. Request/response evidence at Earth's interface is strong packet-level evidence; to state end-to-end delivery to Rover **for a particular captured run**, preserve corresponding Rover terminal logs showing the matching Tokens and `Pending: 0`.
+The repository also includes [`evidence/Earth_IPN974848_Single_and_Aggregate.pcapng`](../evidence/Earth_IPN974848_Single_and_Aggregate.pcapng). Use it as packet evidence and inspect its actual frame numbers rather than assuming the Experiment C screenshot numbering matches this file.
 
-## 7. Suggested 5-minute spoken demonstration
+### Historical example — allocator 0 only (do not mix with the current run)
 
-1. **30 s:** Show topology; explain that Satellite forwards BP bundles and does **not** translate CoAP.
-2. **45 s:** Show IPN allocator/node/service addressing (`ipn:0.1.11` → `ipn:0.3.64`) and the `.ipn.alt` URI.
-3. **60 s:** Show two Science POST clicks and the `SENDING AGGREGATE` Rover log.
-4. **90 s:** Open the **556-byte** request in Wireshark; expand two CoAP members and show independent MIDs, Tokens, Payload-length option.
-5. **45 s:** Show two return Single response bundles and exact Token matches.
-6. **30 s:** State limitations: experimental option 65000, NSTART=2 not congestion-safe by proof, no aggregated responses, fresh clone pending validation.
+An **older** allocator-`0` Science Aggregate contained **556 B** of BPv7 application payload, with two `227 B` member payloads. Its packet walkthrough reported request frame **14**, response frames **31** and **49**, and Tokens `9fc152cf` / `5ae01fab`. Earlier Safety Aggregate evidence contained a **116 B** BPv7 application payload. Those values belong to **different historical captures** and are **not** expected values for the allocator-974848 demonstration. See [`docs/results.md`](results.md) for that historical experiment.
 
-**One-slide content:** `IPN-only no-proxy architecture | Rover Safety/Science | 24-bit MID + Payload-length | 2→1 bundle aggregation | 556-B Wireshark proof | two matching responses` and a link to the demo recording **when one is available**. Do not invent a video URL.
+## 8. Suggested five-minute spoken demonstration
 
-## 8. Preserve a run record
+1. **30 seconds:** Present the three-node topology and explain that Satellite forwards BPv7 bundles, not CoAP/UDP proxy traffic.
+2. **45 seconds:** Show `ipn:974848.1.11` → `ipn:974848.3.64` in Wireshark and point out the RFC 9758 allocator, node and service components.
+3. **60 seconds:** Show the Mission Control v2 GUI and a verified Single exchange or a configured experimental Aggregate.
+4. **90 seconds:** Open a current Aggregate trace (for example, the documented **212 B** Science Aggregate), expand both CoAP members and compare their MIDs, Tokens and Payload-length fields.
+5. **45 seconds:** Show Earth's separate response bundles and any matching Rover response logs available from the same run.
+6. **30 seconds:** Identify limitations: experimental option 65000; controlled NSTART=2 without demonstrated network-wide congestion safety; no aggregated responses; fresh-clone setup not fully validated.
 
-Create `experiments/<date>-<test>/README.md` noting VM versions, code/patch Git commit, running configuration, precise contact start/end times, request and response MIDs/Tokens, observed `bpv7` frame numbers, and capture filenames. Keep raw credential-bearing logs out of Git. Capture a fresh `.pcapng` for every important variant and correlate it with the two application terminal logs.
+For prerecorded material, use the project [`Hackathon_Media`](../Hackathon_Media/) folder. Confirm which video corresponds to the actual version and evidence on screen.
+
+## 9. Preserve a run record and known limitations
+
+For every new variant record the date/time, VM software revisions, EIDs, TCPCL ports, contact schedule, actual NSTART mode, CoAP methods/resource paths, request MIDs/Tokens, response matches, Wireshark frame numbers and `.pcapng` filename. Distinguish **submitted to local µD3TN** from **delivered to Earth**, and distinguish an **Earth response sent** from a **response received and Token-matched at Rover**. Record failures or missing responses as well as successes.
+
+The modified aiocoap code uses experimental **Payload-length option number `65000`**, not a final standardized assignment; its CoAP Critical/Unsafe bit semantics require review. The current functionality does **not** prove full Draft-05 interoperability, security, cross-application congestion control or deployment-wide reliability. Keep secrets, credentials and private VM runtime data out of the repository.
+
+
