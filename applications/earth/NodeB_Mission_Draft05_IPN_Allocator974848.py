@@ -23,13 +23,15 @@ import json
 from ud3tn_utils.aap2.aap2_client import AAP2AsyncUnixClient
 from ud3tn_utils.aap2.generated import aap2_pb2
 
-# Add aiocoap source to path
-# The modified aiocoap fork, copied from the user's existing Draft-04 setup.
+# Load modified aiocoap from this repository
 from pathlib import Path
-project_root = str(Path.home() / 'coapbp/CoAPoverBP-no-proxy-version/aiocoap/src')
-if not Path(project_root, 'aiocoap').is_dir():
-    raise RuntimeError('Missing local Draft-04 aiocoap fork: ' + project_root)
-sys.path.insert(0, project_root)
+
+project_root = Path(__file__).resolve().parents[2] / "vendor" / "aiocoap" / "src"
+
+if not (project_root / "aiocoap").is_dir():
+    raise RuntimeError(f"Missing modified aiocoap source: {project_root}")
+
+sys.path.insert(0, str(project_root))
 
 import aiocoap
 from aiocoap.message import Message
