@@ -80,7 +80,7 @@ fi
 # The modified aiocoap sources are already vendored under vendor/aiocoap/src.
 # Import them from that directory; do not pip-install stock aiocoap over them.
 echo 'Installing Python-side LIVE dependencies into the local virtual environment ...'
-"$PY" -m pip install 'protobuf==5.27.2' 'cbor2' 'aioconsole==0.8.2' 'Pillow' 'crcmod'
+"$PY" -m pip install 'protobuf==5.28.3' 'cbor2' 'aioconsole==0.8.2' 'Pillow' 'crcmod'
 
 export PYTHONPATH="$REPO_ROOT/vendor/aiocoap/src:$AAP2_SRC:$UD3TN_ROOT/pyd3tn${PYTHONPATH:+:$PYTHONPATH}"
 if ! "$PY" -c 'import tkinter, aiocoap, aioconsole; from ud3tn_utils.aap2 import AAP2AsyncUnixClient; from ud3tn_utils.aap2.generated import aap2_pb2; print("LIVE Python imports: OK")'; then
