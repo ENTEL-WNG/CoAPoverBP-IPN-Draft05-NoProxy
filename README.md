@@ -11,6 +11,14 @@ The laboratory implementation and packet dissector are research prototypes, not 
 
 > **Current lab configuration (13 November 2026):** RFC 9758 **three-component `ipn:` EIDs with allocator `974848`**, TCPCLv3 ports **4771–4773**, and the **Experiment C Mission Control v2** GUI. A recorded allocator-974848 test demonstrated Single request/response exchanges and an Aggregate carrying two Science NON POST requests in one BPv7 payload, with separately matched Earth responses. Earlier allocator-`0` results are retained as **historical evidence**, not presented as measurements of the newer setup.
 
+## Participant Handbook
+
+**Start here:** [Download the IETF 127 Participant Lab Manual](Participant%20Handbook/IETF127_CoAP_over_BPv7_Participant_Lab_Manual.pdf) or see the [Participant Handbook folder](Participant%20Handbook/).
+
+The handbook walks through cloning the **`IPN_RFC_9758_Hackathon`** branch, preparing three separate Rover, Satellite and Earth Ubuntu/VirtualBox VMs, installing the patched µD3TN and Python dependencies, configuring contacts, running the real Mission Control GUI, and verifying BPv7 bundles with Wireshark.
+
+A fresh three-VM deployment has **not yet been independently reproduced end to end**. Use separate participant VMs; do not modify the live demonstration nodes.
+
 ## Three-VM architecture
 
 ```text
