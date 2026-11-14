@@ -120,7 +120,7 @@ The helper now points to the same Experiment C launcher rather than the historic
 
 **Do not start a second GUI while one is running, and do not stop or restart GUI-managed µD3TN nodes just to run or inspect the GUI.**
 
-The launcher has **machine-specific absolute paths**, including a particular Python virtual environment. This command is **not yet a validated one-command installation for Hackathon participants on other systems**.
+The launcher locates the GUI and Rover engine relative to this repository and selects Python from `ROVER_GUI_PY`, the repository's `.venv`, a prepared laboratory virtual environment, or system `python3`. **It is not a one-command installer**: live experiments still require patched µD3TN, AAP2 sockets, forwarding contacts, compatible Python dependencies, and the Earth server.
 
 The GUI starts with **NSTART=1**. Its experimental mode controls can change the effective limit to **NSTART=2** for a controlled aggregation test. This does **not** establish deployment-wide congestion-control safety.
 
@@ -262,13 +262,13 @@ An OFF/ON scenario is an experimental challenge, **not an assertion that every d
 
 Earlier experimental files using allocator `0` remain in the repository for historical reference and should not be mixed with the current configuration.
 
-The working Experiment C GUI uses machine-specific Python environments and paths. A complete end-to-end installation from a fresh checkout has not yet been independently validated.
+The current Experiment C GUI supports repository-relative paths and configurable Python environments. A complete end-to-end installation from a fresh checkout has **not yet been independently validated**.
 
 **Do not restart or modify the running Rover, Satellite or Earth VM processes merely to follow the documentation.**
 
 ## Source provenance, licensing and safety
 
-- The recorded original µD3TN laboratory source revision is `37b968d5742cbd75292b534f3421fac70acc46b7`; see [source provenance](docs/upstream-provenance.md). A matching upstream source remote and a reproducible clean-clone workflow still require confirmation.
+- The historical working laboratory reported µD3TN source revision `37b968d5742cbd75292b534f3421fac70acc46b7`. For independent participant installation, `scripts/prepare_participant_ud3tn.sh` clones the public [CoAPoverBP-no-proxy-version](https://github.com/ENTEL-WNG/CoAPoverBP-no-proxy-version) source at pinned revision `a2fb4311b89b31c30e93a5c1704f78131594e927`, checks/applies the project's nine-file three-component IPN patch, and attempts to build µD3TN. See [source provenance](docs/upstream-provenance.md). The fresh three-VM workflow has not yet been independently validated end to end.
 - Vendored aiocoap components include their own upstream licenses. **Do not infer a license for the entire repository** without confirmation from the ENTEL-WNG maintainers.
 - The laboratory previously reported an AAP2 configuration without a BDM secret. Use this setup **only on isolated, trusted lab networks** until security is properly reviewed.
 - Do not publish credentials, VM images, authentication secrets or private runtime state. CoAP correlation Tokens in the protocol trace are **not account authentication tokens**.
