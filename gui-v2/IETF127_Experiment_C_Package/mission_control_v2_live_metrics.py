@@ -216,7 +216,7 @@ class DemoBackend:
         body = json.dumps(payload, separators=(",", ":")) if payload else ""
         self.b.request_sent(app, payload=payload, mid=mid, token=token)
         self.b.log("COAP", f"NON {a['method']} {a['path']}  MID 0x{mid:06X}  Tkn {token:04x}  ({len(body)} B payload)")
-        self.b.log("BP", f"bundle {a['eid']} -> {EARTH_EID} submitted via AAP2")
+        self.b.log("BP", f"SIMULATED SINGLE (1 CoAP request, not an Aggregate): {a['eid']} -> {EARTH_EID}; no real AAP2 submission")
 
         t0 = time.time()
         self._wait_link("rover-sat")
@@ -250,7 +250,7 @@ class DemoBackend:
         with self.lock:
             self.delivered[app] += 1
             d, s = self.delivered[app], self.sent[app]
-        self.b.response_received(app, code, payload=rpayload, location=location, rtt_ms=rtt_ms, matched=True)
+        self.b.response_received(app, code, payload=rpayload, location=location, rtt_ms=rtt_ms, matched=True, token=token)
         self.b.log("COAP", f"{code} <- {EARTH_EID}  RTT {rtt_ms:.0f} ms")
 
         layers = {"CoAP": 14 + (4 if payload else 0), "BPv7": 112, "TCPCL": 32,
