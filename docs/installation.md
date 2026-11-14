@@ -196,15 +196,9 @@ In VirtualBox, create **three Ubuntu VMs**, each with Adapter 1 set to NAT and A
 | Satellite | BPv7 relay | `192.168.100.2/24` | `ipn:974848.2.0` | `4772` |
 | Earth | CoAP server + Wireshark | `192.168.100.1/24` | `ipn:974848.3.0` | `4773` |
 
-### 2. Clone the correct branch on EACH new VM
+### 2. Install prerequisites, then clone the correct branch on EACH new VM
 
-```bash
-git clone --branch IPN_RFC_9758_Hackathon \
-  https://github.com/ENTEL-WNG/CoAPoverBP-IPN-Draft05-NoProxy.git
-cd CoAPoverBP-IPN-Draft05-NoProxy
-```
-
-Ensure Python **3.10 or newer**, matching Tkinter and `venv` support, and basic Ubuntu packages such as Git, GNU make, GCC, the SQLite development headers and network utilities. For example, on a suitable Ubuntu release:
+**On each new Ubuntu participant VM**, first install Git and the build and network utilities before attempting `git clone`:
 
 ```bash
 sudo apt update
@@ -213,7 +207,18 @@ sudo apt install -y git build-essential libsqlite3-dev \
 python3 --version
 ```
 
-Ubuntu 20.04's default Python is older than 3.10; if using that release, provision a **separate Python 3.10+ interpreter with Tkinter and venv**. Do not change the working lab Python environments to accommodate this guide. The required µD3TN build prerequisites may vary by Ubuntu version.
+The live Python helper requires **Python 3.10 or newer**, with matching Tkinter and `venv` support. Ubuntu 20.04's default Python is older; for that release, provision a **separate Python 3.10+ interpreter** and set `PYTHON_BIN` if needed. Do not modify the working demonstration VMs or their Python environments. Other µD3TN build prerequisites can vary by Ubuntu version.
+
+**After Git is installed**, clone the correct Hackathon branch:
+
+```bash
+git clone --branch IPN_RFC_9758_Hackathon \
+  https://github.com/ENTEL-WNG/CoAPoverBP-IPN-Draft05-NoProxy.git
+cd CoAPoverBP-IPN-Draft05-NoProxy
+git branch --show-current
+```
+
+The branch should print `IPN_RFC_9758_Hackathon`. The repository's default branch is `main`, which is not the target for this guide.
 
 ### 3. Prepare a separate patched µD3TN tree on EACH new VM
 
