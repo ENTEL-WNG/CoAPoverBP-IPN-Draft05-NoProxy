@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Earth / Linux participant helper: live enp0s8 capture into the Wireshark Flatpak.
 # Captures packets only; it does not alter µD3TN, contact schedules or CoAP apps.
-# Usage: ./IETF127_Wireshark_IPN_Live_Capture.sh [interface]
-# Optional: CAPTURE_FILTER='tcp port 4773' ./IETF127_Wireshark_IPN_Live_Capture.sh
+# Usage: bash wireshark/wireshark-ipn-live.sh [interface]
+# Optional: CAPTURE_FILTER='tcp port 4773' bash wireshark/wireshark-ipn-live.sh enp0s8
 set -euo pipefail
 IFACE="${1:-enp0s8}"
 APP='org.wireshark.Wireshark'
