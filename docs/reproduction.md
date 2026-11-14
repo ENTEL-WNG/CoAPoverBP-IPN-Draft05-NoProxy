@@ -64,7 +64,7 @@ bash ./run_gui_congestion_results.sh
 
 This is the working **Experiment C Mission Control v2** route. It uses `mission_control_v2_live_metrics.py`, the `experiment_c_engine/NodeA_Mission_Draft05_Aggregation.py` engine, and the Rover AAP2 socket `/tmp/ud3tn-974848-rover.aap2.sock`.
 
-**Do not use `./scripts/rover_gui.sh` for the latest demo**: that launcher points to a historical Rover GUI. The Experiment C launcher also contains environment-specific absolute paths, so it is **not a portable one-command participant installer**.
+The optional `bash scripts/rover_gui.sh` helper now launches the **same current Experiment C Mission Control v2 GUI**. The demonstrated live GUI command remains `bash ./run_gui_congestion_results.sh` from `gui-v2/IETF127_Experiment_C_Package`. On **new participant VMs**, run `source scripts/participant_env.sh` from the repository root in each new terminal before starting the applications. The GUI launcher locates the engine relative to the repository and supports `ROVER_GUI_PY` or the repository `.venv`; however, it is **not a one-command installer**. Patched µD3TN, Python dependencies, forwarding contacts, the Earth server and the Rover AAP2 socket must be configured separately.
 
 The GUI starts at **NSTART=1**. Controlled GUI controls may switch to **NSTART=2** for a two-request Aggregate. The experiment-specific two-message aggregation buffer has an approximately **10-second** deadline. Two clicks do **not** by themselves prove aggregation, and NSTART=2 is **not** a demonstrated congestion-safety guarantee.
 
