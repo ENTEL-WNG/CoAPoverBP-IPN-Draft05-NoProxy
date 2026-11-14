@@ -12,6 +12,7 @@ The current IETF 127 Hackathon demonstration uses IPN allocator **974848**, not 
 | Package | Purpose and contents |
 | --- | --- |
 | [Experiment A — Payload Size / IPN 974848](Experiment_A_Payload_Size_IPN974848/) | [README](Experiment_A_Payload_Size_IPN974848/README.md), revised report, updated Wireshark screenshots, current observations, legacy measurements and plots, verification script, live-capture helper, and archived materials. |
+| [Experiment B — Aggregation Waiting Time / IPN 974848](experiment-b-aggregation-waiting-time/) | Historical allocator-0 waiting-time results, updated RFC 9758 IPN reproduction protocol, experimental data, Wireshark evidence and analysis scripts. Current configuration not yet rerun. |
 | [Experiment C — Updated IPN 974848](Experiment_C_Updated_IPN974848/) | [README](Experiment_C_Updated_IPN974848/README.md), revised report, current Single/Aggregate and RFC 9758 screenshots, historical five-size sweep, calculations, figures, and archived original materials. |
 
 **Repository layout note:** Experiment C's current README and supporting materials are directly inside `Experiment_C_Updated_IPN974848/`. Experiment A and Experiment C contain overlapping historical payload-size data, which must remain separate from the latest allocator-974848 functional evidence.
